@@ -22,7 +22,7 @@ bool isCmdPromptEnabled = true;
 #define rn487xDelayMs       __delay_ms
 #define rn487xRstSet(x)     do{BT_RST_LAT = (x);}while(0)
 #define rn487xRxIndSet(x)   do{BT_IND_LAT = (x);}while(0)
-#define rn487xModeSet(x)    do{BTN_SetOpenDrain(); BTN_LAT = (x);}while(0)
+#define rn487xModeSet(x)    do{SW0_SetOpenDrain(); SW0_LAT = (x);}while(0)
 
 #define ESCAPE_ASYNC_START  '%'
 #define ESCAPE_ASYNC_END    '%'
@@ -48,7 +48,7 @@ bool RN487x_AsyncHandlerSet(asyncHandlerCb_t *cb, uint8_t* b, uint8_t len)
     }
 }
 
-static uint8_t peek;
+static uint8_t peek = 0;
 static bool    ready = false;
 
 /* interceptor of async messages
@@ -108,12 +108,6 @@ uint8_t RN487x_Read(void)
 bool RN487X_Init(void)
 {
 
-    // flush RN487x
-    while (rn487xIsRxReady())
-    {
-        char c = rn487xUartRx();
-    }
-
     // Set to application mode
     rn487xModeSet(true);
 
@@ -128,6 +122,13 @@ bool RN487X_Init(void)
     rn487xRxIndSet(false);
     // Wait while RN487X is booting up
     rn487xDelayMs(RN487X_STARTUP_DELAY);
+
+    // flush RN487x
+    while (rn487xIsRxReady())
+    {
+        char c = rn487xUartRx();
+    }
+
 
     return true;
 }

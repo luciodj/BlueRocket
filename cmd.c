@@ -168,15 +168,15 @@ static int32_t parse_command(uint8_t *cmd)
 void bt_read_reg(char * cmd, uint8_t * response)
 {
     // Get into command mode
-    delay_ms(5);
+    __delay_ms(5);
     EUSART2_Write('$');
     EUSART2_Write('$');
     EUSART2_Write('$');
-    delay_ms(5);
+    __delay_ms(5);
 
     // CR to clear input if already in CMD mode
     EUSART2_Write('\r');
-    delay_ms(5);
+    __delay_ms(5);
 
     // Read out garbage data
     while(EUSART2_is_rx_ready()){
@@ -225,10 +225,10 @@ void blue_print(char id, char* payload)
 
 void blue_int(char * payload, uint16_t value)
 {
-    payload += strlen(payload);     // append
-    sprintf(payload, "%04X", value);
-//    payload += strlen(payload);     // append
-//    sprintf(payload, "%02X", value >> 8);
+    payload += strlen(payload);     // append LSB
+    sprintf(payload, "%02X", value & 0xff);
+    payload += strlen(payload);     // append MSB
+    sprintf(payload, "%02X", value >> 8);
 }
 
 /* \brief Handles incoming commands from the test PC
@@ -249,10 +249,9 @@ void command_handler(void)
             *payload = '\0';
             // read temp in deg C
             i2c_read_reg(TEMP_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 2);
-//            uint8_t deg = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
-//            temp_word = (uint32_t) (buffer[1] & 0x0F) * 625;
+            uint16_t deg = ((buffer[0] >> 2) & 0x3F) | ((buffer[1] << 2) & 0x1fff);
             // simulate output to LightBlue protocol
-            blue_int(payload, (*(uint16_t *)buffer) & 0xfc1f);
+            blue_int(payload, deg);
             blue_print('T', payload);
             // read accelerometer
             *payload = '\0';
@@ -332,7 +331,7 @@ void command_handler(void)
             break;
 
         case CMD_I2C_PROBE:
-            i2c_prober();
+//            i2c_prober();
             print_printf("ok\r\n");
             break;
 
@@ -414,7 +413,7 @@ void command_handler(void)
             break;
 
         case CMD_ECC_SERIAL:
-            if (I2C2_MESSAGE_COMPLETE != atecc508_read_serial(ECC608_I2C_ADDRESS, buffer)) {
+            if (true != atecc508_read_serial(ECC608_I2C_ADDRESS, buffer)) {
                 print_printf("Error!\r\n");
             } else {
                 print_printf("%2x", (uint32_t) buffer[1]);

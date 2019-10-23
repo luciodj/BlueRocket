@@ -13,12 +13,12 @@
   Description:
     This header file provides implementations for pin APIs for all pins selected in the GUI.
     Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
         Device            :  PIC16LF18456
         Driver Version    :  2.11
     The generated drivers are tested against the following:
-        Compiler          :  XC8 1.45
-        MPLAB             :  MPLAB X 4.15
+        Compiler          :  XC8 2.05 and above
+        MPLAB             :  MPLAB X 5.20
 
     Copyright (c) 2013 - 2015 released Microchip Technology Inc.  All rights reserved.
 */
@@ -46,9 +46,7 @@
     SOFTWARE.
 */
 
-#include <xc.h>
 #include "pin_manager.h"
-#include "stdbool.h"
 
 
 
@@ -101,6 +99,13 @@ void PIN_MANAGER_Initialize(void)
     SLRCONA = 0xFF;
     SLRCONB = 0xFF;
     SLRCONC = 0xFF;
+
+    /**
+    INLVLx registers
+    */
+    INLVLA = 0x3F;
+    INLVLB = 0x3F;
+    INLVLC = 0x3F;
 
 
 

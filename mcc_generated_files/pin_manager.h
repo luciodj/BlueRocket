@@ -13,12 +13,12 @@
   @Description
     This header file provides APIs for driver for .
     Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
         Device            :  PIC16LF18456
         Driver Version    :  2.11
     The generated drivers are tested against the following:
-        Compiler          :  XC8 1.45
-        MPLAB 	          :  MPLAB X 4.15	
+        Compiler          :  XC8 2.05 and above
+        MPLAB 	          :  MPLAB X 5.20	
 */
 
 /*
@@ -46,6 +46,12 @@
 
 #ifndef PIN_MANAGER_H
 #define PIN_MANAGER_H
+
+/**
+  Section: Included Files
+*/
+
+#include <xc.h>
 
 #define INPUT   1
 #define OUTPUT  0
@@ -367,25 +373,25 @@
 #define RC5_SetAnalogMode()         do { ANSELCbits.ANSC5 = 1; } while(0)
 #define RC5_SetDigitalMode()        do { ANSELCbits.ANSC5 = 0; } while(0)
 
-// get/set BT_RX_IND aliases
-#define BT_RX_IND_TRIS                 TRISCbits.TRISC6
-#define BT_RX_IND_LAT                  LATCbits.LATC6
-#define BT_RX_IND_PORT                 PORTCbits.RC6
-#define BT_RX_IND_WPU                  WPUCbits.WPUC6
-#define BT_RX_IND_OD                   ODCONCbits.ODCC6
-#define BT_RX_IND_ANS                  ANSELCbits.ANSC6
-#define BT_RX_IND_SetHigh()            do { LATCbits.LATC6 = 1; } while(0)
-#define BT_RX_IND_SetLow()             do { LATCbits.LATC6 = 0; } while(0)
-#define BT_RX_IND_Toggle()             do { LATCbits.LATC6 = ~LATCbits.LATC6; } while(0)
-#define BT_RX_IND_GetValue()           PORTCbits.RC6
-#define BT_RX_IND_SetDigitalInput()    do { TRISCbits.TRISC6 = 1; } while(0)
-#define BT_RX_IND_SetDigitalOutput()   do { TRISCbits.TRISC6 = 0; } while(0)
-#define BT_RX_IND_SetPullup()          do { WPUCbits.WPUC6 = 1; } while(0)
-#define BT_RX_IND_ResetPullup()        do { WPUCbits.WPUC6 = 0; } while(0)
-#define BT_RX_IND_SetPushPull()        do { ODCONCbits.ODCC6 = 0; } while(0)
-#define BT_RX_IND_SetOpenDrain()       do { ODCONCbits.ODCC6 = 1; } while(0)
-#define BT_RX_IND_SetAnalogMode()      do { ANSELCbits.ANSC6 = 1; } while(0)
-#define BT_RX_IND_SetDigitalMode()     do { ANSELCbits.ANSC6 = 0; } while(0)
+// get/set BT_IND aliases
+#define BT_IND_TRIS                 TRISCbits.TRISC6
+#define BT_IND_LAT                  LATCbits.LATC6
+#define BT_IND_PORT                 PORTCbits.RC6
+#define BT_IND_WPU                  WPUCbits.WPUC6
+#define BT_IND_OD                   ODCONCbits.ODCC6
+#define BT_IND_ANS                  ANSELCbits.ANSC6
+#define BT_IND_SetHigh()            do { LATCbits.LATC6 = 1; } while(0)
+#define BT_IND_SetLow()             do { LATCbits.LATC6 = 0; } while(0)
+#define BT_IND_Toggle()             do { LATCbits.LATC6 = ~LATCbits.LATC6; } while(0)
+#define BT_IND_GetValue()           PORTCbits.RC6
+#define BT_IND_SetDigitalInput()    do { TRISCbits.TRISC6 = 1; } while(0)
+#define BT_IND_SetDigitalOutput()   do { TRISCbits.TRISC6 = 0; } while(0)
+#define BT_IND_SetPullup()          do { WPUCbits.WPUC6 = 1; } while(0)
+#define BT_IND_ResetPullup()        do { WPUCbits.WPUC6 = 0; } while(0)
+#define BT_IND_SetPushPull()        do { ODCONCbits.ODCC6 = 0; } while(0)
+#define BT_IND_SetOpenDrain()       do { ODCONCbits.ODCC6 = 1; } while(0)
+#define BT_IND_SetAnalogMode()      do { ANSELCbits.ANSC6 = 1; } while(0)
+#define BT_IND_SetDigitalMode()     do { ANSELCbits.ANSC6 = 0; } while(0)
 
 // get/set SST25_CS aliases
 #define SST25_CS_TRIS                 TRISCbits.TRISC7

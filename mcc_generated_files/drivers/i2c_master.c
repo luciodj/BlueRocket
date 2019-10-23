@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include "i2c_master.h"
 #include "i2c_types.h"
-#include "../i2c1_driver.h"
+#include "../i2c2_driver.h"
 
 /***************************************************************************/
 // I2C STATES
@@ -108,7 +108,7 @@ void i2c_setDataNACKCallback(i2c_callback cb, void *p)
 
 void i2c_setTimeOutCallback(i2c_callback cb, void *p)
 {
-    setCallBack(i2c_timeOut,cb,p);    
+    setCallBack(i2c_timeOut,cb,p);
 }
 
 // when you call open, you supply a device address.
@@ -116,7 +116,7 @@ void i2c_setTimeOutCallback(i2c_callback cb, void *p)
 i2c_error_t i2c_open(i2c_address_t address)
 {
     i2c_error_t ret = I2C_BUSY;
-    
+
     if(!i2c_status.inUse)
     {
         i2c_status.address = address;
@@ -138,15 +138,15 @@ i2c_error_t i2c_open(i2c_address_t address)
         i2c_status.callbackPayload[i2c_dataNACK] = NULL;
         i2c_status.callbackTable[i2c_timeOut]=returnReset;
         i2c_status.callbackPayload[i2c_timeOut] = NULL;
-        
-        i2c1_driver_open();
-        mssp1_clearIRQ();
-        
-        i2c1_driver_setBusCollisionISR(i2c_busCollisionISR);
-        i2c1_driver_setI2cISR(i2c_ISR);
-        
+
+        i2c2_driver_open();
+        mssp2_clearIRQ();
+
+        i2c2_driver_setBusCollisionISR(i2c_busCollisionISR);
+        i2c2_driver_setI2cISR(i2c_ISR);
+
         // uncomment the IRQ enable for an interrupt driven driver.
-//        mssp1_enableIRQ();
+//        mssp2_enableIRQ();
 
         ret = I2C_NOERR;
     }
@@ -167,8 +167,8 @@ i2c_error_t i2c_close(void)
         i2c_status.inUse = 0;
         // close it down
         i2c_status.address = 0xff; // 8-bit address is invalid so this is FREE
-        mssp1_clearIRQ();
-        mssp1_disableIRQ();
+        mssp2_clearIRQ();
+        mssp2_disableIRQ();
         ret = i2c_status.error;
     }
     return ret;
@@ -176,9 +176,9 @@ i2c_error_t i2c_close(void)
 
 void i2c_setTimeOut(uint8_t to)
 {
-    mssp1_disableIRQ();
+    mssp2_disableIRQ();
     i2c_status.time_out_value = to;
-    mssp1_enableIRQ();
+    mssp2_enableIRQ();
 }
 
 void i2c_setBuffer(void *buffer, size_t bufferSize)
@@ -197,7 +197,7 @@ i2c_error_t i2c_masterOperation(bool read)
     {
         i2c_status.busy = true;
         ret = I2C_NOERR;
-        
+
         if(read)
         {
             i2c_status.state = I2C_SEND_ADR_READ;
@@ -206,9 +206,9 @@ i2c_error_t i2c_masterOperation(bool read)
         {
             i2c_status.state = I2C_SEND_ADR_WRITE;
         }
-        i2c1_driver_start();
-        
-        if(! mssp1_IRQisEnabled())
+        i2c2_driver_start();
+
+        if(! mssp2_IRQisEnabled())
             i2c_poller();
     }
     return ret;
@@ -231,14 +231,14 @@ inline void i2c_poller(void)
 {
     while(i2c_status.busy)
     {
-        mssp1_waitForEvent(NULL);
+        mssp2_waitForEvent(NULL);
         i2c_ISR();
     }
 }
 
 static i2c_fsm_states_t do_I2C_RESET(void)
 {
-    i2c1_driver_resetBus();
+    i2c2_driver_resetBus();
     i2c_status.busy = false; // Bus Free
     i2c_status.error = I2C_NOERR;
     return I2C_RESET; // park the FSM on reset
@@ -253,64 +253,64 @@ static i2c_fsm_states_t do_I2C_IDLE(void)
 
 static i2c_fsm_states_t do_I2C_SEND_RESTART_READ(void)
 {
-    i2c1_driver_restart();
+    i2c2_driver_restart();
     return I2C_SEND_ADR_READ;
 }
 
 static i2c_fsm_states_t do_I2C_SEND_RESTART_WRITE(void)
 {
-    i2c1_driver_restart();
+    i2c2_driver_restart();
     return I2C_SEND_ADR_WRITE;
 }
 
 static i2c_fsm_states_t do_I2C_SEND_RESTART(void)
 {
-    i2c1_driver_restart();
+    i2c2_driver_restart();
     return I2C_SEND_ADR_READ;
 }
 
 static i2c_fsm_states_t do_I2C_SEND_STOP(void)
 {
-    i2c1_driver_stop();
+    i2c2_driver_stop();
     return I2C_IDLE;
 }
 
 static i2c_fsm_states_t do_I2C_SEND_ADR_READ(void)
 {
     i2c_status.addressNACKCheck = 1;
-    i2c1_driver_TXData(i2c_status.address << 1 | 1);
+    i2c2_driver_TXData(i2c_status.address << 1 | 1);
     return I2C_RCEN;
 }
 
 static i2c_fsm_states_t do_I2C_SEND_ADR_WRITE(void)
 {
     i2c_status.addressNACKCheck = 1;
-    i2c1_driver_TXData(i2c_status.address << 1);
+    i2c2_driver_TXData(i2c_status.address << 1);
     return I2C_TX;
 }
 
 static i2c_fsm_states_t do_I2C_RCEN(void)
 {
     i2c_status.addressNACKCheck = 0;
-    i2c1_driver_startRX();
+    i2c2_driver_startRX();
     return I2C_RX;
 }
 
 static i2c_fsm_states_t do_I2C_DO_ACK(void)
 {
-    i2c1_driver_sendACK();
+    i2c2_driver_sendACK();
     return I2C_RCEN;
 }
 
 static i2c_fsm_states_t do_I2C_DO_NACK_STOP(void)
 {
-    i2c1_driver_sendNACK();
+    i2c2_driver_sendNACK();
     return I2C_SEND_STOP;
 }
 
 static i2c_fsm_states_t do_I2C_DO_NACK_RESTART(void)
 {
-    i2c1_driver_sendNACK();
+    i2c2_driver_sendNACK();
     return I2C_SEND_RESTART;
 }
 
@@ -332,7 +332,7 @@ static i2c_fsm_states_t do_I2C_DO_ADDRESS_NACK(void)
 
 static i2c_fsm_states_t do_I2C_TX(void)
 {
-    if(i2c1_driver_isNACK())
+    if(i2c2_driver_isNACK())
     {
         switch(i2c_status.callbackTable[i2c_dataNACK](i2c_status.callbackPayload[i2c_dataNACK]))
         {
@@ -349,17 +349,17 @@ static i2c_fsm_states_t do_I2C_TX(void)
     else
     {
         i2c_status.addressNACKCheck = 0;
-        i2c1_driver_TXData(*i2c_status.data_ptr++);
+        i2c2_driver_TXData(*i2c_status.data_ptr++);
         return (--i2c_status.data_length)?I2C_TX:I2C_TX_EMPTY;
     }
 }
 
 static i2c_fsm_states_t do_I2C_RX(void)
 {
-    *i2c_status.data_ptr++ = i2c1_driver_getRXData();
+    *i2c_status.data_ptr++ = i2c2_driver_getRXData();
     if(--i2c_status.data_length)
     {
-        i2c1_driver_sendACK();
+        i2c2_driver_sendACK();
         return I2C_RCEN;
     }
     else
@@ -388,7 +388,7 @@ static i2c_fsm_states_t do_I2C_TX_EMPTY(void)
         case i2c_restart_write:
             return do_I2C_SEND_RESTART();
         case i2c_continue:
-            mssp1_setIRQ();
+            mssp2_setIRQ();
             return I2C_TX;
         default:
         case i2c_stop:
@@ -417,14 +417,14 @@ const stateHandlerFunction fsmStateTable[] = {
 };
 
 void i2c_ISR(void)
-{       
-    mssp1_clearIRQ();
-    
+{
+    mssp2_clearIRQ();
+
     // NOTE: We are ignoring the Write Collision flag.
     // the write collision is when SSPBUF is written prematurely (2x in a row without sending)
 
     // NACK After address override Exception handler
-    if(i2c_status.addressNACKCheck && i2c1_driver_isNACK())
+    if(i2c_status.addressNACKCheck && i2c2_driver_isNACK())
     {
         i2c_status.state = I2C_ADDRESS_NACK; // State Override
     }
@@ -434,7 +434,7 @@ void i2c_ISR(void)
 
 void i2c_busCollisionISR(void)
 {
-    i2c1_driver_clearBusCollision();
+    i2c2_driver_clearBusCollision();
 }
 
 /************************************************************************/

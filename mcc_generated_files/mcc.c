@@ -13,12 +13,12 @@
   @Description:
     This header file provides implementations for driver APIs for all modules selected in the GUI.
     Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
         Device            :  PIC16LF18456
         Driver Version    :  2.00
     The generated drivers are tested against the following:
-        Compiler          :  XC8 1.45 or later
-        MPLAB             :  MPLAB X 4.15
+        Compiler          :  XC8 2.05 and above or later
+        MPLAB             :  MPLAB X 5.20
 */
 
 /*
@@ -53,7 +53,6 @@ void SYSTEM_Initialize(void)
     PIN_MANAGER_Initialize();
     OSCILLATOR_Initialize();
     SPI1_Initialize();
-    I2C2_Initialize();
     EUSART1_Initialize();
     EUSART2_Initialize();
 }
@@ -66,8 +65,8 @@ void OSCILLATOR_Initialize(void)
     OSCCON3 = 0x00;
     // MFOEN disabled; LFOEN disabled; ADOEN disabled; SOSCEN disabled; EXTOEN disabled; HFOEN disabled; 
     OSCEN = 0x00;
-    // HFFRQ 16_MHz; 
-    OSCFRQ = 0x05;
+    // HFFRQ 32_MHz; 
+    OSCFRQ = 0x06;
     // MFOR not ready; 
     OSCSTAT = 0x00;
     // HFTUN 0; 

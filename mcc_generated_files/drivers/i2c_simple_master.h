@@ -20,24 +20,21 @@
     TERMS.
 */
 
-#ifndef _UART_H
-#define _UART_H
+#ifndef I2C_SIMPLE_MASTER_H
+#define	I2C_SIMPLE_MASTER_H
 
-/**
-  Section: Included Files
- */
 #include <stdint.h>
-#include <stddef.h>
-#include "../eusart2.h"
-#include "../eusart1.h"
+#include <stdio.h>
+#include "../drivers/i2c_types.h"
 
-typedef enum { 
-    BLE_UART,
-    CDC_UART
-} uart_configurations_t;
+uint8_t i2c_read1ByteRegister(i2c_address_t address, uint8_t reg);
+uint16_t i2c_read2ByteRegister(i2c_address_t address, uint8_t reg);
+void i2c_write1ByteRegister(i2c_address_t address, uint8_t reg, uint8_t data);
+void i2c_write2ByteRegister(i2c_address_t address, uint8_t reg, uint16_t data);
 
-typedef struct { uint8_t (*Read)(void); void (*Write)(uint8_t txdata); bool (*TransmitReady)(void); bool (*DataReady)(void); void (*SetTxISR)(void (* interruptHandler)(void)); void (*RxDefaultISR)(void); void (*SetRxISR)(void (* interruptHandler)(void)); bool (*TransmitDone)(void); void (*TxDefaultISR)(void); void (*Initialize)(void);  } uart_functions_t;
+void i2c_writeNBytes(i2c_address_t address, void* data, size_t len);
+void i2c_readDataBlock(i2c_address_t address, uint8_t reg, void *data, size_t len);
+void i2c_readNBytes(i2c_address_t address, void *data, size_t len);
 
-extern const uart_functions_t uart[];
+#endif	/* I2C_SIMPLE_MASTER_H */
 
-#endif	// _UART_H

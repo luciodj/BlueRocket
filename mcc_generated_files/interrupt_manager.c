@@ -15,12 +15,12 @@
     For individual peripheral handlers please see the peripheral driver for
     all modules selected in the GUI.
     Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
         Device            :  PIC16LF18456
         Driver Version    :  2.03
     The generated drivers are tested against the following:
-        Compiler          :  XC8 1.45 or later
-        MPLAB 	          :  MPLAB X 4.15
+        Compiler          :  XC8 2.05 and above or later
+        MPLAB 	          :  MPLAB X 5.20
 */
 
 /*
@@ -54,13 +54,29 @@ void __interrupt() INTERRUPT_InterruptManager (void)
     // interrupt handler
     if(INTCONbits.PEIE == 1)
     {
-        if(PIE3bits.BCL2IE == 1 && PIR3bits.BCL2IF == 1)
+        if(PIE3bits.TX2IE == 1 && PIR3bits.TX2IF == 1)
         {
-            I2C2_BusCollisionISR();
+            EUSART2_TxDefaultInterruptHandler();
+        } 
+        else if(PIE3bits.RC2IE == 1 && PIR3bits.RC2IF == 1)
+        {
+            EUSART2_RxDefaultInterruptHandler();
+        } 
+        else if(PIE3bits.BCL2IE == 1 && PIR3bits.BCL2IF == 1)
+        {
+            i2c2_driver_busCollisionISR();
         } 
         else if(PIE3bits.SSP2IE == 1 && PIR3bits.SSP2IF == 1)
         {
-            I2C2_ISR();
+            i2c2_driver_i2cISR();
+        } 
+        else if(PIE3bits.TX1IE == 1 && PIR3bits.TX1IF == 1)
+        {
+            EUSART1_TxDefaultInterruptHandler();
+        } 
+        else if(PIE3bits.RC1IE == 1 && PIR3bits.RC1IF == 1)
+        {
+            EUSART1_RxDefaultInterruptHandler();
         } 
         else
         {

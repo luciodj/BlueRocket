@@ -13,12 +13,12 @@
   @Description
     This header file provides APIs for driver for EUSART2.
     Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
         Device            :  PIC16LF18456
-        Driver Version    :  2.01
+        Driver Version    :  2.1.0
     The generated drivers are tested against the following:
-        Compiler          :  XC8 1.45
-        MPLAB 	          :  MPLAB X 4.15
+        Compiler          :  XC8 2.05 and above
+        MPLAB 	          :  MPLAB X 5.20
 */
 
 /*
@@ -68,11 +68,31 @@
 
 #define EUSART2_DataReady  (EUSART2_is_rx_ready())
 
+/**
+  Section: Data Type Definitions
+*/
+
+typedef union {
+    struct {
+        unsigned perr : 1;
+        unsigned ferr : 1;
+        unsigned oerr : 1;
+        unsigned reserved : 5;
+    };
+    uint8_t status;
+}eusart2_status_t;
+
+/**
+ Section: Global variables
+ */
+extern volatile uint8_t eusart2TxBufferRemaining;
+extern volatile uint8_t eusart2RxCount;
 
 /**
   Section: EUSART2 APIs
 */
-
+extern void (*EUSART2_TxDefaultInterruptHandler)(void);
+extern void (*EUSART2_RxDefaultInterruptHandler)(void);
 
 /**
   @Summary
@@ -241,6 +261,54 @@ bool EUSART2_is_tx_done(void);
 
 /**
   @Summary
+    Gets the error status of the last read byte.
+
+  @Description
+    This routine gets the error status of the last read byte.
+
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    before calling this function. The returned value is only
+    updated after a read is called.
+
+  @Param
+    None
+
+  @Returns
+    the status of the last read byte
+
+  @Example
+	<code>
+    void main(void)
+    {
+        volatile uint8_t rxData;
+        volatile eusart2_status_t rxStatus;
+        
+        // Initialize the device
+        SYSTEM_Initialize();
+        
+        // Enable the Global Interrupts
+        INTERRUPT_GlobalInterruptEnable();
+        
+        while(1)
+        {
+            // Logic to echo received data
+            if(EUSART2_is_rx_ready())
+            {
+                rxData = EUSART2_Read();
+                rxStatus = EUSART2_get_last_status();
+                if(rxStatus.ferr){
+                    LED_0_SetHigh();
+                }
+            }
+        }
+    }
+    </code>
+ */
+eusart2_status_t EUSART2_get_last_status(void);
+
+/**
+  @Summary
     Read a byte of data from the EUSART2.
 
   @Description
@@ -279,9 +347,162 @@ uint8_t EUSART2_Read(void);
 */
 void EUSART2_Write(uint8_t txData);
 
+/**
+  @Summary
+    Maintains the driver's transmitter state machine and implements its ISR.
 
+  @Description
+    This routine is used to maintain the driver's internal transmitter state
+    machine.This interrupt service routine is called when the state of the
+    transmitter needs to be maintained in a non polled manner.
 
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    for the ISR to execute correctly.
 
+  @Param
+    None
+
+  @Returns
+    None
+*/
+void EUSART2_Transmit_ISR(void);
+
+/**
+  @Summary
+    Maintains the driver's receiver state machine and implements its ISR
+
+  @Description
+    This routine is used to maintain the driver's internal receiver state
+    machine.This interrupt service routine is called when the state of the
+    receiver needs to be maintained in a non polled manner.
+
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    for the ISR to execute correctly.
+
+  @Param
+    None
+
+  @Returns
+    None
+*/
+void EUSART2_Receive_ISR(void);
+
+/**
+  @Summary
+    Maintains the driver's receiver state machine
+
+  @Description
+    This routine is called by the receive state routine and is used to maintain 
+    the driver's internal receiver state machine. It should be called by a custom
+    ISR to maintain normal behavior
+
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    for the ISR to execute correctly.
+
+  @Param
+    None
+
+  @Returns
+    None
+*/
+void EUSART2_RxDataHandler(void);
+
+/**
+  @Summary
+    Set EUSART2 Framing Error Handler
+
+  @Description
+    This API sets the function to be called upon EUSART2 framing error
+
+  @Preconditions
+    Initialize  the EUSART2 before calling this API
+
+  @Param
+    Address of function to be set as framing error handler
+
+  @Returns
+    None
+*/
+void EUSART2_SetFramingErrorHandler(void (* interruptHandler)(void));
+
+/**
+  @Summary
+    Set EUSART2 Overrun Error Handler
+
+  @Description
+    This API sets the function to be called upon EUSART2 overrun error
+
+  @Preconditions
+    Initialize  the EUSART2 module before calling this API
+
+  @Param
+    Address of function to be set as overrun error handler
+
+  @Returns
+    None
+*/
+void EUSART2_SetOverrunErrorHandler(void (* interruptHandler)(void));
+
+/**
+  @Summary
+    Set EUSART2 Error Handler
+
+  @Description
+    This API sets the function to be called upon EUSART2 error
+
+  @Preconditions
+    Initialize  the EUSART2 module before calling this API
+
+  @Param
+    Address of function to be set as error handler
+
+  @Returns
+    None
+*/
+void EUSART2_SetErrorHandler(void (* interruptHandler)(void));
+
+/**
+  @Summary
+    Sets the transmit handler function to be called by the interrupt service
+
+  @Description
+    Calling this function will set a new custom function that will be 
+    called when the transmit interrupt needs servicing.
+
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    for the ISR to execute correctly.
+
+  @Param
+    A pointer to the new function
+
+  @Returns
+    None
+*/
+void EUSART2_SetTxInterruptHandler(void (* interruptHandler)(void));
+
+/**
+  @Summary
+    Sets the receive handler function to be called by the interrupt service
+
+  @Description
+    Calling this function will set a new custom function that will be 
+    called when the receive interrupt needs servicing.
+
+  @Preconditions
+    EUSART2_Initialize() function should have been called
+    for the ISR to execute correctly.
+
+  @Param
+    A pointer to the new function
+
+  @Returns
+    None
+*/
+void EUSART2_SetRxInterruptHandler(void (* interruptHandler)(void));
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 
