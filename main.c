@@ -45,12 +45,14 @@
 #include "common/minion.h"
 #include "cmd.h"
 #include "rn487x.h"
+#include <string.h>
 #include "mcc_generated_files/drivers/uart.h"
 
 
 #include "sst25pf040ct.h"
 
-static uint8_t buffer[80] = "empty";
+uint8_t buffer[80];
+char command[80];
 bool connected = false;
 
 void message_handler(uint8_t* msg)
@@ -87,11 +89,13 @@ void main(void)
             uart[CDC_UART].Write(RN487x_Read());
 
         if (connected) {
-            while (uart[CDC_UART].DataReady())
-                uart[BLE_UART].Write(uart[CDC_UART].Read());
-
-//        command_handler(); // Run command handler here
-//            command_handler();
+//            while (uart[CDC_UART].DataReady())
+//                uart[BLE_UART].Write(uart[CDC_UART].Read());
+            while (uart[CDC_UART].DataReady()){
+                if (get_command(uart[CDC_UART].Read(), command))
+                    if (strlen(command))
+                        command_handler(command);   // Run command handler here
+            }
         }
     }
 }

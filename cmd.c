@@ -110,38 +110,23 @@ uint32_t CONFIG_ReadWord(uint32_t configAddr)
     return ((uint16_t)((NVMDATH << 8) | NVMDATL));
 }
 
-/** \brief Get the command from a stream.
- *
- * Will block until a "\r\n" terminated string has been received.
- */
-static void get_command(uint8_t *cmd)
+
+bool get_command(char c, char *cmd)
 {
+    static uint8_t i = 0;
+    bool res = false;
 
-    uint8_t i = 0;
-    bool command = false;
+    // Blocking read of CDC UART
 
-    while (!command) {
-        // Blocking read of CDC UART
-        cmd[i] = EUSART1_Read();
-
-        if ((cmd[i] == '\r') || (cmd[i] == '\n')) {
-            cmd[i] = '\0';
-            command = true;
-        }
-        // If the command is 1 character long (e.g /r/n sent), ignore it to prevent double trigger
-        if (command && i == 0) {
-            command = false;
-            i = 0;
-        } else {
-            i++;
-            // Check for buffer overflow of cmd buffer and handle it
-            if (i >= 80) {
-                i = 80 - 1;
-                cmd[i] = '\0';
-                command = true;
-            }
-        }
+    // Check for buffer overflow of cmd buffer and handle it
+    if ((c == '\r') || (c == '\n') || (i >= 80)){
+        cmd[i] = '\0';
+        i = 0;
+        return true;
     }
+
+    cmd[i++] = c;
+    return false;
 }
 
 
@@ -153,7 +138,7 @@ static void get_command(uint8_t *cmd)
  * \returns Array index of the command when the command exists, otherwise
  * it will return -1 aka CMD_NOT_FOUND.
  */
-static int32_t parse_command(uint8_t *cmd)
+static int32_t parse_command(char *cmd)
 {
     uint32_t i;
 
@@ -237,11 +222,9 @@ void blue_int(char * payload, uint16_t value)
  * When a not identified command as detected a "nak\r\n" will be sent
  * back to the test PC.
  */
-void command_handler(void)
+void command_handler(char *cmd)
 {
     char payload[32];
-
-    get_command(cmd);
 
     switch(parse_command(cmd)) {
         case CMD_BLUE:
