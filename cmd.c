@@ -194,17 +194,17 @@ void blue_print(char id, char* payload)
     char s[3];
     char hex[] = "0123456789ABCDEF";        // sequence
 
-    EUSART1_Write('[');                     // start packet
-    EUSART1_Write(hex[blue_sequence++]);
+    EUSART2_Write('[');                     // start packet
+    EUSART2_Write(hex[blue_sequence++]);
     if (blue_sequence > 15) blue_sequence = 0;
-    EUSART1_Write(id);                      // packet ID
+    EUSART2_Write(id);                      // packet ID
     sprintf(s, "%02X", strlen(payload));    // payload length
-    EUSART1_Write(s[0]);
-    EUSART1_Write(s[1]);
+    EUSART2_Write(s[0]);
+    EUSART2_Write(s[1]);
     while (*payload) {                      // payload
-        EUSART1_Write(*(uint8_t*)payload++);
+        EUSART2_Write(*(uint8_t*)payload++);
     }
-    EUSART1_Write(']');                     // close packet
+    EUSART2_Write(']');                     // close packet
 
 }
 
@@ -253,7 +253,8 @@ void command_handler(char *cmd)
                 }
             }
             blue_print('X', payload);
-            if (EUSART1_Read() == 'x') break;
+//            if (EUSART1_Read() == 'x')
+            break;
           }
           break;
 

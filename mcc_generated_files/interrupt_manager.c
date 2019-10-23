@@ -62,14 +62,6 @@ void __interrupt() INTERRUPT_InterruptManager (void)
         {
             EUSART2_RxDefaultInterruptHandler();
         } 
-        else if(PIE3bits.BCL2IE == 1 && PIR3bits.BCL2IF == 1)
-        {
-            i2c2_driver_busCollisionISR();
-        } 
-        else if(PIE3bits.SSP2IE == 1 && PIR3bits.SSP2IF == 1)
-        {
-            i2c2_driver_i2cISR();
-        } 
         else if(PIE3bits.TX1IE == 1 && PIR3bits.TX1IF == 1)
         {
             EUSART1_TxDefaultInterruptHandler();
@@ -77,6 +69,14 @@ void __interrupt() INTERRUPT_InterruptManager (void)
         else if(PIE3bits.RC1IE == 1 && PIR3bits.RC1IF == 1)
         {
             EUSART1_RxDefaultInterruptHandler();
+        } 
+        else if(PIE3bits.BCL2IE == 1 && PIR3bits.BCL2IF == 1)
+        {
+            i2c2_driver_busCollisionISR();
+        } 
+        else if(PIE3bits.SSP2IE == 1 && PIR3bits.SSP2IF == 1)
+        {
+            i2c2_driver_i2cISR();
         } 
         else
         {

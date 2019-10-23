@@ -41,12 +41,12 @@
     SOFTWARE.
 */
 
+#include <string.h>
 #include "mcc_generated_files/mcc.h"
+#include "mcc_generated_files/drivers/uart.h"
 #include "common/minion.h"
 #include "cmd.h"
 #include "rn487x.h"
-#include <string.h>
-#include "mcc_generated_files/drivers/uart.h"
 
 
 #include "sst25pf040ct.h"
@@ -58,7 +58,7 @@ bool connected = false;
 void message_handler(uint8_t* msg)
 {
     //    Async Message:
-    printf("<<< %s >>>\n", msg);
+//    printf("<<< %s >>>\n", msg);
     if (msg[0] == 'D'){
         connected = false;
         puts("]");
@@ -89,12 +89,19 @@ void main(void)
             uart[CDC_UART].Write(RN487x_Read());
 
         if (connected) {
+            // on a schedule
+            if (TMR0IF) {
+                TMR0IF = 0;
+                strcpy(command, "blue");
+                command_handler(command);   // Run command
+            }
 //            while (uart[CDC_UART].DataReady())
 //                uart[BLE_UART].Write(uart[CDC_UART].Read());
             while (uart[CDC_UART].DataReady()){
                 if (get_command(uart[CDC_UART].Read(), command))
                     if (strlen(command))
                         command_handler(command);   // Run command handler here
+            //
             }
         }
     }
