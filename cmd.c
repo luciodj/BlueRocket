@@ -5,13 +5,7 @@
  *  Author: are.halvorsen
  */
 #include "cmd.h"
-#include "mcc_generated_files/mcc.h"
-#include <string.h>
-#include <stdio.h>
-#include "common/minion.h"
-#include "common/i2c_wrapper.h"
-
-#include "sst25pf040ct.h"
+#include "sensor_handling.h"
 
 uint8_t cmd[80];
 
@@ -24,10 +18,8 @@ uint8_t public_key_x509_header[128] = { 0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2A
 uint8_t buffer[80];
 uint32_t temp_word = 0;
 uint8_t key_buffer[128];
+static uint8_t blue_sequence = 0;
 
-#define TEMP_SENS_I2C_ADDRESS     0x18
-#define ACCEL_SENS_I2C_ADDRESS    0x19
-#define ECC608_I2C_ADDRESS        0x58
 
 #define NUM_ELEM(x) (sizeof (x) / sizeof (*(x)))
 
@@ -116,8 +108,6 @@ bool get_command(char c, char *cmd)
     static uint8_t i = 0;
     bool res = false;
 
-    // Blocking read of CDC UART
-
     // Check for buffer overflow of cmd buffer and handle it
     if ((c == '\r') || (c == '\n') || (i >= 80)){
         cmd[i] = '\0';
@@ -177,7 +167,6 @@ void bt_read_reg(char * cmd, uint8_t * response)
     uint8_t i = 0;
     uint8_t done = false;
     while (!done){
-        // Blocking read of CDC UART
         response[i] = EUSART2_Read();
         if ((response[i] == '\r') || (response[i] == '\n')) {
             response[i] = 0;
@@ -185,27 +174,6 @@ void bt_read_reg(char * cmd, uint8_t * response)
         }
         i++;
     }
-}
-
-static uint8_t blue_sequence = 0;
-
-void blue_print(char id, char* payload)
-{
-    char s[3];
-    char hex[] = "0123456789ABCDEF";        // sequence
-
-    EUSART2_Write('[');                     // start packet
-    EUSART2_Write(hex[blue_sequence++]);
-    if (blue_sequence > 15) blue_sequence = 0;
-    EUSART2_Write(id);                      // packet ID
-    sprintf(s, "%02X", strlen(payload));    // payload length
-    EUSART2_Write(s[0]);
-    EUSART2_Write(s[1]);
-    while (*payload) {                      // payload
-        EUSART2_Write(*(uint8_t*)payload++);
-    }
-    EUSART2_Write(']');                     // close packet
-
 }
 
 void blue_int(char * payload, uint16_t value)
@@ -216,44 +184,79 @@ void blue_int(char * payload, uint16_t value)
     sprintf(payload, "%02X", value >> 8);
 }
 
+void blue_print(char id, char* payload)
+{
+    char s[3];
+    char hex[] = "0123456789ABCDEF";        // sequence
+
+    uart[BLE_UART].Write('[');                     // start packet
+    uart[BLE_UART].Write(hex[blue_sequence++]);
+    if (blue_sequence > 15) blue_sequence = 0;
+    uart[BLE_UART].Write(id);                      // packet ID
+    sprintf(s, "%02X", strlen(payload));    // payload length
+    uart[BLE_UART].Write(s[0]);
+    uart[BLE_UART].Write(s[1]);
+    while (*payload) {                      // payload
+        uart[BLE_UART].Write(*(uint8_t*)payload++);
+    }
+    uart[BLE_UART].Write(']');                     // close packet
+
+}
+
+/* \brief collects temperature sensor data
+*/
+void blue_temp(void){
+    char payload[32];
+
+    *payload = '\0';
+    uint16_t word = temp_read(buffer);
+    blue_int(payload, word);
+
+    // also expose on terminal
+    uint8_t  degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
+    uint16_t temp_word = (uint32_t) (buffer[1] & 0x0F) * 625;
+    print_printf("%d.%4dC\r\n", (uint32_t) degree, temp_word);
+    blue_print('T', payload);
+}
+
+/* \brief collects the XYZ from teh accel sensor
+*/
+void blue_acc(void){
+    char payload[32];
+
+    *payload = '\0';
+    uint8_t i;
+    uint16_t xyz[3], temp_word;
+
+    acc_read(buffer, xyz);
+    for(i=0; i<3; i++) {
+        temp_word = xyz[i];
+        blue_int(payload, temp_word);
+
+        // also expose on terminal
+        if(temp_word & 0x800){
+            temp_word = ~temp_word + 1;
+            print_printf("-%d, ", temp_word & 0xFFF);
+        }else{
+            print_printf("%d, ", temp_word & 0xFFF);
+        }
+    }
+    print_printf("\n");
+    blue_print('X', payload);
+
+}
+
+
 /* \brief Handles incoming commands from the test PC
- *
- * Current implementation will block until a command has been received.
- * When a not identified command as detected a "nak\r\n" will be sent
- * back to the test PC.
  */
 void command_handler(char *cmd)
 {
-    char payload[32];
-
     switch(parse_command(cmd)) {
         case CMD_BLUE:
           while(1){
-            *payload = '\0';
-            // read temp in deg C
-            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 2);
-            uint16_t deg = ((buffer[0] >> 2) & 0x3F) | ((buffer[1] << 2) & 0x1fff);
-            // simulate output to LightBlue protocol
-            blue_int(payload, deg);
-            blue_print('T', payload);
-            // read accelerometer
-            *payload = '\0';
-            buffer[0] = 2;
-            i2c_read_reg(ACCEL_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 6);
-            uint16_t *p = (uint16_t*)buffer;
-            for(uint8_t i=0; i<3; i++){
-                temp_word = (buffer[i*2 + 1] << 4) | (buffer[i*2] >> 4);
-                uint16_t lsb_first = ((temp_word >> 8 & 0xff)) | (temp_word << 8);
-                blue_int(payload, lsb_first);
-                if(temp_word & 0x800){
-                    temp_word = ~temp_word + 1;
-                    print_printf("-%d, ", temp_word & 0xFFF);
-                }else{
-                    print_printf("%d, ", temp_word & 0xFFF);
-                }
-            }
-            blue_print('X', payload);
-//            if (EUSART1_Read() == 'x')
+              blue_temp();
+              blue_acc();
+            if (EUSART1_Read() == 'x')
             break;
           }
           break;
@@ -320,17 +323,15 @@ void command_handler(char *cmd)
             break;
 
         case CMD_TEMP_MANDEV:
-            buffer[0] = MCP9808_MAN;
-            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 2);
-            buffer[2] = MCP9808_DEVICE;
-            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, &buffer[2], 1, &buffer[2], 2);
+            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, MCP9808_MAN, buffer, 2);
+            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, MCP9808_DEVICE, &buffer[2], 2);
             temp_word = (uint32_t) buffer[0] << 24 | (uint32_t) buffer[1] << 16 | (uint32_t) buffer[2] << 8 | (uint32_t) buffer[3];
             print_printf("0x%8x\r\n", temp_word);
             break;
 
         case CMD_TEMP_SENSOR:
             buffer[0] = MCP9808_TEMP;
-            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 2);
+            i2c_read_reg(TEMP_SENS_I2C_ADDRESS, MCP9808_TEMP, &buffer[0], 2);
             uint8_t degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
             temp_word = (uint32_t) (buffer[1] & 0x0F) * 625;
             print_printf("%d.%4dC\r\n", (uint32_t) degree, temp_word);
@@ -347,14 +348,12 @@ void command_handler(char *cmd)
             break;
 
         case CMD_ACCEL_MANDEV:
-            buffer[0] = 0;
-            i2c_read_reg(ACCEL_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 1);
+            i2c_read_reg(ACCEL_SENS_I2C_ADDRESS, 0, &buffer[0], 1);
             print_printf("0x%2x\r\n", buffer[0]);
             break;
 
         case CMD_ACCEL_SENSOR:
-            buffer[0] = 2;
-            i2c_read_reg(ACCEL_SENS_I2C_ADDRESS, &buffer[0], 1, &buffer[0], 6);
+            i2c_read_reg(ACCEL_SENS_I2C_ADDRESS, 2, &buffer[0], 6);
             for(uint8_t i=0; i<3; i++){
                 temp_word = (buffer[i*2 + 1] << 4) | (buffer[i*2] >> 4);
                 if(temp_word & 0x800){

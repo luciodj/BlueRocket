@@ -272,6 +272,13 @@ static i2c_fsm_states_t do_I2C_SEND_RESTART(void)
 static i2c_fsm_states_t do_I2C_SEND_STOP(void)
 {
     i2c2_driver_stop();
+    i2c_status.busy = false; // bus free
+    return I2C_RESET; // park the FSM on reset
+}
+
+static i2c_fsm_states_t do_I2C_SEND_NACK_STOP(void)
+{
+    i2c2_driver_stop();
     return I2C_IDLE;
 }
 
@@ -325,6 +332,8 @@ static i2c_fsm_states_t do_I2C_DO_ADDRESS_NACK(void)
         case i2c_restart_read:
         case i2c_restart_write:
             return do_I2C_SEND_RESTART();
+        case i2c_nack_stop:
+            return do_I2C_SEND_NACK_STOP();
         default:
             return do_I2C_SEND_STOP();
     }

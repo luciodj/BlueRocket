@@ -44,16 +44,16 @@
 #include <string.h>
 #include "mcc_generated_files/mcc.h"
 #include "mcc_generated_files/drivers/uart.h"
-#include "common/minion.h"
+#include "util.h"
 #include "cmd.h"
 #include "rn487x.h"
 
 
 #include "sst25pf040ct.h"
 
-uint8_t buffer[80];
-char command[80];
-bool connected = false;
+static uint8_t buffer[80];
+static char command[80];
+static bool connected = false;
 
 void message_handler(uint8_t* msg)
 {
@@ -70,6 +70,7 @@ void message_handler(uint8_t* msg)
     }
 }
 
+
 void main(void)
 {
     SYSTEM_Initialize();
@@ -85,23 +86,29 @@ void main(void)
 
     while (1)
     {
+        // report BLE output to terminal
         while (RN487x_DataReady())
             uart[CDC_UART].Write(RN487x_Read());
 
         if (connected) {
-            // on a schedule
+            // on a 1 sec schedule
             if (TMR0IF) {
                 TMR0IF = 0;
-                strcpy(command, "blue");
-                command_handler(command);   // Run command
-            }
+                // send sensor data via transparent uart
+                blue_temp();
+                blue_acc();
+
+//             mirror cdc to ble
 //            while (uart[CDC_UART].DataReady())
 //                uart[BLE_UART].Write(uart[CDC_UART].Read());
+            }
+
+            // pass terminal commands to interpreter
             while (uart[CDC_UART].DataReady()){
                 if (get_command(uart[CDC_UART].Read(), command))
                     if (strlen(command))
                         command_handler(command);   // Run command handler here
-            //
+
             }
         }
     }

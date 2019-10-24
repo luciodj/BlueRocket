@@ -3,9 +3,9 @@
  *
  * Created: 19.08.2016 13:44:26
  *  Author: M43960
- */ 
+ */
 
-#include "minion.h"
+#include "util.h"
 
 
 putc_callback print_putc;
@@ -23,7 +23,7 @@ uint16_t crc16_update(uint16_t crc, uint8_t a, uint8_t reverse)
 	// in reverse implementation
 	uint8_t i;
     uint8_t input = 0;
-	
+
 	if (reverse) {
 		for (i = 0; i < 8; i++) {
 			if (a & (0x01 << i)) {
@@ -78,23 +78,23 @@ void base64(uint8_t * output_buf, uint8_t * input_buf, uint8_t size) {
 		b = ((input_buf[idx_in] << 4) | (input_buf[idx_in + 1] >> 4)) & 0x3F;
 		c = ((input_buf[idx_in + 1] << 2) | (input_buf[idx_in + 2] >> 6)) & 0x3F;
 		d = (input_buf[idx_in + 2]) & 0x3F;
-		
+
 		output_buf[idx_out + 0] = base64_lut[a];
 		output_buf[idx_out + 1] = base64_lut[b];
 		output_buf[idx_out + 2] = base64_lut[c];
-		output_buf[idx_out + 3] = base64_lut[d];		
-		
+		output_buf[idx_out + 3] = base64_lut[d];
+
 		idx_in  += 3;
 		idx_out += 4;
-		sz -= 3;	
+		sz -= 3;
 
 		if ((idx_out % 64) == 0) {
 			output_buf[idx_out] = '\r';
 			//output_buf[idx_out + 1] = '\n';
 			idx_out += 1;
-		}	
+		}
 	}
-	
+
 	if (sz == 2) {
 		a = (input_buf[idx_in] >> 2) & 0x3F;
 		b = ((input_buf[idx_in] << 4) | (input_buf[idx_in+1] >> 4)) & 0x3F;
@@ -102,9 +102,9 @@ void base64(uint8_t * output_buf, uint8_t * input_buf, uint8_t size) {
 		output_buf[idx_out + 0] = base64_lut[a];
 		output_buf[idx_out + 1] = base64_lut[b];
 		output_buf[idx_out + 2] = base64_lut[c];
-		output_buf[idx_out + 3] = '=';	
+		output_buf[idx_out + 3] = '=';
 	}
-	
+
 	if (sz == 1) {
 		a = (input_buf[idx_in] >> 2) & 0x3F;
 		b = ((input_buf[idx_in] << 4) | 0) & 0x3F;
@@ -134,7 +134,7 @@ static void int2uint(uint32_t num, uint8_t * outstream, uint8_t outsize)
 		indx++;
 		limit /= 10;
 	}
-		
+
 	//Count digits in buffer
 	for (uint8_t dcount = 0; dcount < 10; dcount++) {
 		if (digit_buf[dcount] != '0') {
@@ -142,12 +142,12 @@ static void int2uint(uint32_t num, uint8_t * outstream, uint8_t outsize)
 			break;
 		}
 	}
-	
+
 	//Check if requested digits are more than counted
 	if (outsize > digit_count) {
         digit_count = outsize;
     }
-	
+
 	//Move digits to buffer
 	for (uint8_t dcount=0; dcount<digit_count; dcount++) {
 		outstream[dcount] = digit_buf[(uint8_t) (10 - digit_count + dcount)];
@@ -179,7 +179,7 @@ static void int2hex(uint32_t num, uint8_t * outstream, uint8_t outsize)
 	for (uint8_t u = digit_count; u > 0; u--) {
 		temp = (uint8_t) (num & 0x0F);
 		num >>= 4;
-		if (temp<0x0A) {		
+		if (temp<0x0A) {
 			outstream[u - 1] = (uint8_t) (temp + 48);
 		} else {
 			outstream[u - 1] = (uint8_t) (temp + 55);
@@ -195,7 +195,7 @@ static void int2bin(uint32_t num, uint8_t * outstream, uint8_t outsize)
 {
 	uint8_t digit_count = 1;
 	uint32_t bit_mask = 0x80000000;
-    
+
 	for (uint8_t dcount = 32; dcount > 0; dcount--) {
 	    if (num & bit_mask) {
 			digit_count = dcount;
@@ -203,7 +203,7 @@ static void int2bin(uint32_t num, uint8_t * outstream, uint8_t outsize)
 	    }
 		bit_mask >>= 1;
 	}
-					
+
 	//Sanity check if requested digits are more than counted or too many
 	if (outsize > digit_count) {
         digit_count = outsize;
@@ -217,7 +217,7 @@ static void int2bin(uint32_t num, uint8_t * outstream, uint8_t outsize)
 	for (uint8_t u = digit_count; u > 0; u--) {
 		temp = (uint8_t) (num & 0x01);
 		num >>= 1;
-		if (temp) {		
+		if (temp) {
 			outstream[u - 1] = '1';
 		} else {
 			outstream[u - 1] = '0';
@@ -236,12 +236,12 @@ void print_printf(char * stream, ...)
 	if (print_putc == 0) {
 		return;
     }
-	
+
 	va_list args;
 	va_start(args, stream);
 	uint8_t buffer[40];
 	uint8_t * convStream = buffer;
-    
+
 	while (*stream != 0x00) {
 		if (*stream == '%') {
 			stream++;
@@ -278,9 +278,9 @@ void print_printf(char * stream, ...)
 				convStream[0] = '%';
 				convStream[1] = 0;
 			}
-			
+
 			while (*convStream != 0x00) {
-				print_putc(*convStream++);				
+				print_putc(*convStream++);
 			}
 		} else {
 			print_putc(*stream);
@@ -301,12 +301,12 @@ void print_char(uint8_t byte)
 void print_array_as_hex(uint8_t* hex_data, uint32_t len, uint8_t size)
 {
 	uint8_t buffer[3];
-	
+
     print_putc('[');
 	for (uint32_t cnt=0; cnt<len; cnt++) {
 		int2hex(hex_data[cnt], buffer, size);
 		print_putc('0');
-		print_putc('x');		
+		print_putc('x');
 		print_putc(buffer[0]);
 		print_putc(buffer[1]);
 		if (cnt < (len - 1)) {
@@ -321,7 +321,7 @@ void print_array_as_uint(uint8_t* uint_data, uint32_t len, uint8_t size)
 {
 	uint8_t buffer[12];
 	uint8_t * convBuf = buffer;
-    
+
 	print_putc('[');
 	for (uint32_t cnt = 0; cnt < len; cnt++) {
 		int2uint(uint_data[cnt], convBuf, size);

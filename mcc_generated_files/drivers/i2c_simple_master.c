@@ -78,7 +78,7 @@ uint8_t i2c_read1ByteRegister(i2c_address_t address, uint8_t reg)
         while(I2C_BUSY == (e = i2c_close())); // sit here until finished.
         if(e==I2C_NOERR) break;
     }
-    
+
 
     return d2;
 }
@@ -102,7 +102,7 @@ uint16_t i2c_read2ByteRegister(i2c_address_t address, uint8_t reg)
     i2c_setAddressNACKCallback(i2c_restartWrite,NULL); //NACK polling?
     i2c_masterWrite();
     while(I2C_BUSY == i2c_close()); // sit here until finished.
-    
+
     return (result << 8 | result >> 8);
 }
 
@@ -123,6 +123,8 @@ void i2c_write2ByteRegister(i2c_address_t address, uint8_t reg, uint16_t data)
     i2c_masterWrite();
     while(I2C_BUSY == i2c_close()); // sit here until finished.
 }
+
+
 
 /****************************************************************/
 typedef struct
@@ -159,4 +161,20 @@ void i2c_readNBytes(i2c_address_t address, void *data, size_t len)
     i2c_setBuffer(data,len);
     i2c_masterRead();
     while(I2C_BUSY == i2c_close()); // sit here until finished.
+}
+
+
+bool i2c_readNBytes_nr(i2c_address_t address, void *data, size_t len)
+// special version that does not retry on nack but return fail
+// this is necessary to support the ECC608A POLLING mode
+{
+    i2c_error_t ret;
+	while (!i2c_open(address))
+		; // sit here until we get the bus..
+	i2c_setBuffer(data, len);
+	i2c_setAddressNACKCallback(i2c_setReturnNack, NULL); // do not retry, return fail
+	i2c_masterOperation(true);
+    while (I2C_BUSY == (ret = i2c_close()))
+		; // sit here until finished.
+    return (ret == I2C_NOERR);
 }

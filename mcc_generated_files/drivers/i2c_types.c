@@ -42,3 +42,8 @@ i2c_operations_t i2c_restartRead(void *p)
     return i2c_restart_read;
 }
 
+i2c_operations_t i2c_setReturnNack(void *p)
+{
+    return i2c_nack_stop;
+}
+

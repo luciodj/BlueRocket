@@ -40,7 +40,8 @@ typedef enum
     i2c_restart_read,
     i2c_restart_write,
     i2c_continue,
-    i2c_reset_link
+    i2c_reset_link,
+    i2c_nack_stop
 } i2c_operations_t;
 
 typedef i2c_operations_t (*i2c_callback)(void *p);
@@ -52,6 +53,7 @@ i2c_operations_t i2c_returnStop(void *p);
 i2c_operations_t i2c_returnReset(void *p);
 i2c_operations_t i2c_restartWrite(void *p);
 i2c_operations_t i2c_restartRead(void *p);
+i2c_operations_t i2c_setReturnNack(void *p);
 
 #endif	/* I2C_TYPES_H */
 
