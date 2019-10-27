@@ -109,7 +109,7 @@ void main(void)
                     if (strlen(command))
                         command_handler(command);   // Run command handler here
 
-            }
+                }
         }
     }
 }

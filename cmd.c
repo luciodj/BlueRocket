@@ -176,30 +176,35 @@ void bt_read_reg(char * cmd, uint8_t * response)
     }
 }
 
-void blue_int(char * payload, uint16_t value)
+static char _hex[] = "0123456789ABCDEF";
+#define Hex(x) _hex[(x) & 0xf]
+
+void blue_byte(char * payload, uint8_t value)
 {
-    payload += strlen(payload);     // append LSB
-    sprintf(payload, "%02X", value & 0xff);
-    payload += strlen(payload);     // append MSB
-    sprintf(payload, "%02X", value >> 8);
+    payload += strlen(payload);
+    *payload++ = Hex(value >> 4);    // append LSB
+    *payload++ = Hex(value);
+    *payload = '\0';
+}
+void blue_word(char* payload, uint16_t value)
+{
+    blue_byte(payload, value);  // append LSB
+    blue_byte(payload, value >> 8);
 }
 
 void blue_print(char id, char* payload)
 {
     char s[3];
-    char hex[] = "0123456789ABCDEF";        // sequence
 
-    uart[BLE_UART].Write('[');                     // start packet
-    uart[BLE_UART].Write(hex[blue_sequence++]);
-    if (blue_sequence > 15) blue_sequence = 0;
-    uart[BLE_UART].Write(id);                      // packet ID
-    sprintf(s, "%02X", strlen(payload));    // payload length
-    uart[BLE_UART].Write(s[0]);
-    uart[BLE_UART].Write(s[1]);
-    while (*payload) {                      // payload
+    uart[BLE_UART].Write('[');                      // start packet
+    uart[BLE_UART].Write(Hex(blue_sequence++));
+    uart[BLE_UART].Write(id);                       // packet ID
+    uart[BLE_UART].Write(Hex(strlen(payload)>>4));  // packet size
+    uart[BLE_UART].Write(Hex(strlen(payload)));
+    while (*payload) {                              // payload
         uart[BLE_UART].Write(*(uint8_t*)payload++);
     }
-    uart[BLE_UART].Write(']');                     // close packet
+    uart[BLE_UART].Write(']');                      // close packet
 
 }
 
@@ -210,7 +215,7 @@ void blue_temp(void){
 
     *payload = '\0';
     uint16_t word = temp_read(buffer);
-    blue_int(payload, word);
+    blue_word(payload, word);
 
     // also expose on terminal
     uint8_t  degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
@@ -231,7 +236,7 @@ void blue_acc(void){
     acc_read(buffer, xyz);
     for(i=0; i<3; i++) {
         temp_word = xyz[i];
-        blue_int(payload, temp_word);
+        blue_word(payload, temp_word);
 
         // also expose on terminal
         if(temp_word & 0x800){
@@ -243,7 +248,6 @@ void blue_acc(void){
     }
     print_printf("\n");
     blue_print('X', payload);
-
 }
 
 
