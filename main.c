@@ -84,6 +84,12 @@ void main(void)
 
     print_printf("LightBlue demo\n");
 
+//    char cmd[] = "S-,PIC-BLE\r\n";
+//    RN487X_EnterCmdMode();
+//    RN487X_SendCmd(&cmd[0], strlen(cmd));
+//    RN487X_RebootCmd();
+//
+
     while (1)
     {
         // report BLE output to terminal
@@ -94,9 +100,13 @@ void main(void)
             // on a 1 sec schedule
             if (TMR0IF) {
                 TMR0IF = 0;
+                blue_version(0x01);
                 // send sensor data via transparent uart
                 blue_temp();
                 blue_acc();
+                // send button status
+                blue_leds();
+                blue_button();
 
 //             mirror cdc to ble
 //            while (uart[CDC_UART].DataReady())

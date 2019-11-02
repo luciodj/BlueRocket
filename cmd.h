@@ -14,5 +14,8 @@ void command_handler(char *);
 bool get_command(char, char*);
 void blue_acc(void);
 void blue_temp(void);
+void blue_leds(void);
+void blue_button(void);
+void blue_version(uint8_t);
 
 #endif /* COMMAND_HANDLER_H */

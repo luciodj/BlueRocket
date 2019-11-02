@@ -1,8 +1,6 @@
 /*
  * cmd.c
  *
- * Created: 03.01.2013 14:21:49
- *  Author: are.halvorsen
  */
 #include "cmd.h"
 #include "sensor_handling.h"
@@ -205,7 +203,6 @@ void blue_print(char id, char* payload)
         uart[BLE_UART].Write(*(uint8_t*)payload++);
     }
     uart[BLE_UART].Write(']');                      // close packet
-
 }
 
 /* \brief collects temperature sensor data
@@ -250,6 +247,34 @@ void blue_acc(void){
     blue_print('X', payload);
 }
 
+void blue_button(void)
+{
+    char payload[16];
+    *payload = '\0';
+    blue_byte(payload, 0x00 + (1 - SW0_PORT)); // Button 0, state ( 1 = pushed )
+    blue_print('P', payload);
+}
+
+void blue_leds(void)
+{
+    char payload[16];
+    uint8_t led0 = 0x00 + (1-LED_0_PORT);   // LED0 state (1 = on)
+    *payload = '\0';
+    blue_byte(payload, led0);
+    blue_print('L', payload);
+    *payload = '\0';
+    uint8_t led1 = 1; //TODO
+    blue_byte(payload, 0x10 + led1);        // LED1 state (1 = on)
+    blue_print('L', payload);
+}
+
+void blue_version(uint8_t version)
+{
+    char payload[16];
+    *payload = '\0';
+    blue_byte(payload, version);
+    blue_print('V', payload);
+}
 
 /* \brief Handles incoming commands from the test PC
  */
