@@ -17,5 +17,6 @@ void blue_temp(void);
 void blue_leds(void);
 void blue_button(void);
 void blue_version(uint8_t);
+void blue_parse(char);
 
 #endif /* COMMAND_HANDLER_H */

@@ -21,6 +21,7 @@ static uint8_t blue_sequence = 0;
 
 #define NUM_ELEM(x) (sizeof (x) / sizeof (*(x)))
 
+typedef enum { _idle=0, _seq, _cmd, _len0, _len1, _payload0, _payload1} blue_state;
 
 #define CMD_HELLO		   0
 #define CMD_CHIPREV        1
@@ -215,9 +216,9 @@ void blue_temp(void){
     blue_word(payload, word);
 
     // also expose on terminal
-    uint8_t  degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
-    uint16_t temp_word = (uint32_t) (buffer[1] & 0x0F) * 625;
-    print_printf("%d.%4dC\r\n", (uint32_t) degree, temp_word);
+    uint16_t degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
+    uint16_t temp_word = (uint16_t) (buffer[1] & 0x0F) * 625;
+    print_printf("%d.%4dC\r\n", (uint32_t)degree, (uint32_t)temp_word);
     blue_print('T', payload);
 }
 
@@ -238,9 +239,9 @@ void blue_acc(void){
         // also expose on terminal
         if(temp_word & 0x800){
             temp_word = ~temp_word + 1;
-            print_printf("-%d, ", temp_word & 0xFFF);
+            print_printf("-%d, ", (uint32_t)temp_word & 0xFFF);
         }else{
-            print_printf("%d, ", temp_word & 0xFFF);
+            print_printf("%d, ", (uint32_t)temp_word & 0xFFF);
         }
     }
     print_printf("\n");
@@ -275,6 +276,84 @@ void blue_version(uint8_t version)
     blue_byte(payload, version);
     blue_print('V', payload);
 }
+
+void dispatch(char cmd, uint8_t data)
+{
+    switch(cmd){
+        case 'L':   // LED command
+            // control LED0
+            if ((data & 0x10) == 0)    // LED 0
+                LED_0_LAT = 1 - (data & 1);
+            break;
+        case 'S':   // serial data
+            // send data to serial port
+            uart[CDC_UART].Write(data);
+            break;
+        default:    // command unknown (return Error R?)
+            break;
+    }
+}
+
+#define h2d(c)  (((c) <= '9') ? (c) - '0' : (c) - 'A' + 10)
+
+/* \brief Parses the LightBLUE commands according to the serial protocol defined
+ *
+ * [ seq cmd len payload ]
+ * where:
+ *   seq: a single hex digit changing at each cycle
+ *   cmd: L for LED, S for serial data string ...
+ *   len: two hex digits, 00-ff len of payload, # of hex digits following
+ *   payload: hex digits
+ */
+void blue_parse(char c)
+{
+    static blue_state state = _idle;
+    static uint8_t length = 0;
+    static uint8_t data = 0;
+    static char cmd = '\0';
+
+    switch(state) {
+        case _seq:
+            //ignore sequence
+            state = _cmd;
+            break;
+        case _cmd:
+            cmd = c;
+            state = _len0;
+            break;
+        case _len0:
+            length = h2d(c & 0x5f);
+            state = _len1;
+            break;
+        case _len1:
+            length = (length << 4) + h2d(c & 0x5f);
+            state = _payload0;
+            break;
+        case _payload0:
+            data = h2d(c & 0x5f);
+            length--;
+            if (length == 0)
+                state = _idle;
+            else
+                state = _payload1;
+            break;
+        case _payload1:
+            data = (data << 4) + h2d(c & 0x5f);
+            dispatch(cmd, data);
+            length--;
+            if (length == 0)
+                state = _idle;
+            else
+                state = _payload0;
+            break;
+        case _idle:
+        default:
+            if (c == '[')
+                state = _seq;
+            break;
+    }
+}
+
 
 /* \brief Handles incoming commands from the test PC
  */

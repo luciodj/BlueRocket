@@ -70,7 +70,6 @@ void message_handler(uint8_t* msg)
     }
 }
 
-
 void main(void)
 {
     SYSTEM_Initialize();
@@ -92,10 +91,6 @@ void main(void)
 
     while (1)
     {
-        // report BLE output to terminal
-        while (RN487x_DataReady())
-            uart[CDC_UART].Write(RN487x_Read());
-
         if (connected) {
             // on a 1 sec schedule
             if (TMR0IF) {
@@ -107,19 +102,27 @@ void main(void)
                 // send button status
                 blue_leds();
                 blue_button();
-
-//             mirror cdc to ble
-//            while (uart[CDC_UART].DataReady())
-//                uart[BLE_UART].Write(uart[CDC_UART].Read());
             }
-
-            // pass terminal commands to interpreter
-            while (uart[CDC_UART].DataReady()){
-                if (get_command(uart[CDC_UART].Read(), command))
-                    if (strlen(command))
-                        command_handler(command);   // Run command handler here
-
-                }
+            // parse BLE output
+            while (RN487x_DataReady())
+                blue_parse(RN487x_Read());
         }
+        else {
+            // report BLE output to terminal
+            while (RN487x_DataReady())
+                uart[CDC_UART].Write(RN487x_Read());
+        }
+
+//      mirror cdc to ble
+        while (uart[CDC_UART].DataReady())
+            uart[BLE_UART].Write(uart[CDC_UART].Read());
+
+
+//             pass terminal commands to interpreter
+//            while (uart[CDC_UART].DataReady()){
+//                if (get_command(uart[CDC_UART].Read(), command))
+//                    if (strlen(command))
+//                        command_handler(command);   // Run command handler here
+//                }
     }
 }

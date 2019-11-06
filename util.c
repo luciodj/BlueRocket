@@ -1,8 +1,6 @@
 /*
- * minion.c
+ * util.c
  *
- * Created: 19.08.2016 13:44:26
- *  Author: M43960
  */
 
 #include "util.h"
