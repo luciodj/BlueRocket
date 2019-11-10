@@ -287,6 +287,10 @@ bool RN487X_EnterDataMode(void);
 */
 bool RN487X_SetName(const char *name, uint8_t nameLen);
 
+/* Set Output pin (1) on/off
+ */
+bool RN487X_SetIO(bool b);
+
  /**
   @Summary
     Sets the default supported services in RN487x.

@@ -4,6 +4,7 @@
  */
 #include "cmd.h"
 #include "sensor_handling.h"
+#include "rn487x.h"
 
 uint8_t cmd[80];
 
@@ -218,7 +219,7 @@ void blue_temp(void){
     // also expose on terminal
     uint16_t degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
     uint16_t temp_word = (uint16_t) (buffer[1] & 0x0F) * 625;
-    print_printf("%d.%4dC\r\n", (uint32_t)degree, (uint32_t)temp_word);
+//    print_printf("%d.%4dC\r\n", (uint32_t)degree, (uint32_t)temp_word);
     blue_print('T', payload);
 }
 
@@ -239,12 +240,12 @@ void blue_acc(void){
         // also expose on terminal
         if(temp_word & 0x800){
             temp_word = ~temp_word + 1;
-            print_printf("-%d, ", (uint32_t)temp_word & 0xFFF);
+//            print_printf("-%d, ", (uint32_t)temp_word & 0xFFF);
         }else{
-            print_printf("%d, ", (uint32_t)temp_word & 0xFFF);
+//            print_printf("%d, ", (uint32_t)temp_word & 0xFFF);
         }
     }
-    print_printf("\n");
+//    print_printf("\n");
     blue_print('X', payload);
 }
 
@@ -256,17 +257,69 @@ void blue_button(void)
     blue_print('P', payload);
 }
 
+// led1 RED, is managed as a global as we cannot poll its status
+uint8_t led1 = 0;       // off by default
+uint8_t led1_new = 0;   // off by default
+
+void led1_set(uint8_t v)
+{
+    led1_new = v;
+}
+
+/*
+ * LED1 (RED) cannot be set while in transparent mode, it must be deferred to main loop
+ * RED is controlled by the BLE module in CMD mode
+ * switching mode while in the middle of a receive sequence would clear the BLE buffers
+ */
+void led1_update(void)
+{
+    if (led1 != led1_new) {  // value change
+        led1 = led1_new;
+        RN487X_EnterCmdMode();
+        RN487X_SetIO(led1 == 0);
+        RN487X_EnterDataMode();
+    }
+}
+
+uint8_t led1_get(void)
+{
+    return led1;
+}
+
+void led0_set(uint8_t v)
+{
+    LED_0_LAT = 1 - v;
+}
+
+uint8_t led0_get(void)
+{
+    return 1 - LED_0_PORT;
+}
+
 void blue_leds(void)
 {
     char payload[16];
-    uint8_t led0 = 0x00 + (1-LED_0_PORT);   // LED0 state (1 = on)
     *payload = '\0';
-    blue_byte(payload, led0);
+    blue_byte(payload, 0x00 + led0_get());
     blue_print('L', payload);
     *payload = '\0';
-    uint8_t led1 = 1; //TODO
-    blue_byte(payload, 0x10 + led1);        // LED1 state (1 = on)
+    blue_byte(payload, 0x10 + led1_get());  // LED1 state (1 = on)
     blue_print('L', payload);
+}
+
+void blue_serial(char* serial)
+{
+    uint8_t len = strlen(serial)*2; // packet ID
+    uart[BLE_UART].Write('[');                      // start packet
+    uart[BLE_UART].Write(Hex(blue_sequence++));
+    uart[BLE_UART].Write('S');
+    uart[BLE_UART].Write(Hex(len>>4));              // packet size
+    uart[BLE_UART].Write(Hex(len));
+    while (*serial) {                               // payload
+        uart[BLE_UART].Write(Hex(*serial>>4));
+        uart[BLE_UART].Write(Hex(*serial++));
+    }
+    uart[BLE_UART].Write(']');                      // close packet
 }
 
 void blue_version(uint8_t version)
@@ -277,13 +330,16 @@ void blue_version(uint8_t version)
     blue_print('V', payload);
 }
 
-void dispatch(char cmd, uint8_t data)
+void dispatch(char cmd, uint16_t data)
 {
+    uint8_t led;
     switch(cmd){
         case 'L':   // LED command
-            // control LED0
-            if ((data & 0x10) == 0)    // LED 0
-                LED_0_LAT = 1 - (data & 1);
+            led = (data >> 4) & 1;
+            if (led == 0)    // LED 0
+                led0_set(data & 1);
+            else             // LED 1
+                led1_set(data & 1);
             break;
         case 'S':   // serial data
             // send data to serial port
@@ -294,7 +350,7 @@ void dispatch(char cmd, uint8_t data)
     }
 }
 
-#define h2d(c)  (((c) <= '9') ? (c) - '0' : (c) - 'A' + 10)
+#define h2d(c)  (((c) <= '9') ? (c) - '0' : (c & 0x5f) - 'A' + 10)
 
 /* \brief Parses the LightBLUE commands according to the serial protocol defined
  *
@@ -309,9 +365,10 @@ void blue_parse(char c)
 {
     static blue_state state = _idle;
     static uint8_t length = 0;
-    static uint8_t data = 0;
+    static uint16_t data = 0;
     static char cmd = '\0';
 
+//    printf("Char: %c, state: %d\n", c, state);
     switch(state) {
         case _seq:
             //ignore sequence
@@ -322,15 +379,15 @@ void blue_parse(char c)
             state = _len0;
             break;
         case _len0:
-            length = h2d(c & 0x5f);
+            length = h2d(c);
             state = _len1;
             break;
         case _len1:
-            length = (length << 4) + h2d(c & 0x5f);
+            length = (length << 4) + h2d(c);
             state = _payload0;
             break;
         case _payload0:
-            data = h2d(c & 0x5f);
+            data = h2d(c);
             length--;
             if (length == 0)
                 state = _idle;
@@ -338,7 +395,7 @@ void blue_parse(char c)
                 state = _payload1;
             break;
         case _payload1:
-            data = (data << 4) + h2d(c & 0x5f);
+            data = (data << 4) + h2d(c);
             dispatch(cmd, data);
             length--;
             if (length == 0)

@@ -276,7 +276,7 @@ bool RN487X_EnterCmdMode(void)
     cmdBuf[0] = '$';
     cmdBuf[1] = '$';
     cmdBuf[2] = '$';
-//    puts("$$$");
+
     RN487X_SendCmd(cmdBuf, 3);
 
     return RN487X_ReadMsg(cmdPrompt, sizeof (cmdPrompt));
@@ -295,6 +295,25 @@ bool RN487X_EnterDataMode(void)
     RN487X_SendCmd(cmdBuf, 5);
 
     return RN487X_ReadMsg(cmdPrompt, sizeof (cmdPrompt));
+}
+
+/* \brief SetIO pin value on/off (on == true)
+ */
+bool RN487X_SetIO(bool b)
+{ // |O,01,00
+    cmdBuf[0] = '|';    // I/O
+    cmdBuf[1] = 'O';    // Output
+    cmdBuf[2] = ',';
+    cmdBuf[3] = '0';
+    cmdBuf[4] = '1';
+    cmdBuf[5] = ',';
+    cmdBuf[6] = '0';
+    cmdBuf[7] = (b) ? '1':'0';
+    cmdBuf[8] = '\r';
+    cmdBuf[9] = '\n';
+
+    RN487X_SendCmd(cmdBuf, 10);
+    return RN487X_ReadDefaultResponse();
 }
 
 bool RN487X_SetName(const char *name, uint8_t nameLen)

@@ -49,11 +49,10 @@
 #include "rn487x.h"
 
 
-#include "sst25pf040ct.h"
-
-static uint8_t buffer[80];
-static char command[80];
-static bool connected = false;
+static uint8_t buffer[80];  // buffer for async messages
+static char serial[80];     // buffer for LightBlue
+static uint8_t sp = 0;      // insertion pointer
+static bool connected = false; // LightBlue is conected
 
 void message_handler(uint8_t* msg)
 {
@@ -66,7 +65,6 @@ void message_handler(uint8_t* msg)
     else if (msg[0] == 'S') {
         connected = true;
         puts("[");
-
     }
 }
 
@@ -83,18 +81,14 @@ void main(void)
 
     print_printf("LightBlue demo\n");
 
-//    char cmd[] = "S-,PIC-BLE\r\n";
-//    RN487X_EnterCmdMode();
-//    RN487X_SendCmd(&cmd[0], strlen(cmd));
-//    RN487X_RebootCmd();
-//
-
-    while (1)
-    {
+    static bool prev_led = false;
+    while (1)  {
         if (connected) {
             // on a 1 sec schedule
             if (TMR0IF) {
-                TMR0IF = 0;
+                TMR0IF = 0; // clear flag
+                led1_update();
+
                 blue_version(0x01);
                 // send sensor data via transparent uart
                 blue_temp();
@@ -106,23 +100,26 @@ void main(void)
             // parse BLE output
             while (RN487x_DataReady())
                 blue_parse(RN487x_Read());
-        }
-        else {
+            // buffer terminal input for Lightblue serial command
+            while (uart[CDC_UART].DataReady()) {
+                    serial[sp] = uart[CDC_UART].Read();
+                    if ((serial[sp] == '\n') || (sp == (sizeof(serial)-1))) {
+                        serial[sp] = '0';
+                        blue_serial(serial);
+                        sp = 0;
+                    }
+                    else
+                        sp++;
+                }
+            }
+
+        else { // not connected
             // report BLE output to terminal
             while (RN487x_DataReady())
                 uart[CDC_UART].Write(RN487x_Read());
-        }
-
-//      mirror cdc to ble
-        while (uart[CDC_UART].DataReady())
-            uart[BLE_UART].Write(uart[CDC_UART].Read());
-
-
-//             pass terminal commands to interpreter
-//            while (uart[CDC_UART].DataReady()){
-//                if (get_command(uart[CDC_UART].Read(), command))
-//                    if (strlen(command))
-//                        command_handler(command);   // Run command handler here
-//                }
-    }
+            //  mirror cdc to ble
+            while (uart[CDC_UART].DataReady())
+                uart[BLE_UART].Write(uart[CDC_UART].Read());
+        } // disconnected
+    } // main lopp
 }
