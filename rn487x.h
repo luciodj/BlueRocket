@@ -41,22 +41,6 @@ typedef enum
 
 typedef enum
 {
-    BR_921600,
-    BR_460800,
-    BR_230400,
-    BR_115200,
-    BR_57600,
-    BR_38400,
-    BR_28800,
-    BR_19200,
-    BR_14400,
-    BR_9600,
-    BR_4800,
-    BR_2400,
-}RN487X_BAUDRATE_t;
-
-typedef enum
-{
     RN487X_ENABLE_FLOW_CONTROL = 0x8000,
     RN487X_NO_PROMPT = 0x4000,
     RN487X_FAST_MODE = 0x2000,
@@ -267,26 +251,6 @@ bool RN487X_EnterCmdMode(void);
 */
 bool RN487X_EnterDataMode(void);
 
- /**
-  @Summary
-    Sets device name.
-
-  @Description
-    This routine sets the RN487x device name. For more details, refer SN
-  * command in RN4870-71 user guide.
-
-  @Preconditions
-    RN487X should be in command mode.
-
-  @Param
-  name - Device name [20 alphanumeric characters max]
-  nameLen - Device name length
-
-  @Returns
-    bool - true, if successfully sets device name; false, otherwise
-*/
-bool RN487X_SetName(const char *name, uint8_t nameLen);
-
 /* Set Output pin (1) on/off
  */
 bool RN487X_SetIO(bool b);
@@ -310,27 +274,6 @@ bool RN487X_SetIO(bool b);
     bool - true, if successfully sets service bitmap; false, otherwise
 */
 bool RN487X_SetServiceBitmap(uint8_t serviceBitmap);
-
- /**
-  @Summary
-    Sets the RN487x interface baud rate.
-
-  @Description
-    This routine sets the baud rate for RN487x interface. The possible baud rate
-  * values can be found in RN487X_BAUDRATE_t. For more details, refer SB
-  * command in RN4870-71 user guide.
-  * Note: The RN487x is configured with 115200 baud rate in production line.
-
-  @Preconditions
-    RN487X should be in command mode.
-
-  @Param
-    baudRate - baudrate for RN487x interface
-
-  @Returns
-    bool - true, if successfully sets baud rate; false, otherwise
-*/
-bool RN487x_SetBaudRate(uint8_t baudRate);
 
  /**
   @Summary
@@ -414,26 +357,6 @@ bool RN487X_RebootCmd(void);
 
  /**
   @Summary
-    Resets RN487x to factory default.
-
-  @Description
-    This routine resets RN487x to factory default. The possible reset modes
-  * can be found in RN487X_FACTORY_RESET_MODE_t. For more details, refer SF
-  * commands in RN4870-71 user guide.
-
-  @Preconditions
-    RN487X should be in command mode.
-
-  @Param
-    resetMode - Mode of factory reset.
-
-  @Returns
-    bool - true, if successfully resets to factory default; false, otherwise
-*/
-bool RN487X_FactoryReset(RN487X_FACTORY_RESET_MODE_t resetMode);
-
- /**
-  @Summary
     Disconnects the BLE link between RN487x and remote device.
 
   @Description
@@ -450,44 +373,6 @@ bool RN487X_FactoryReset(RN487X_FACTORY_RESET_MODE_t resetMode);
     bool - true, if successfully disconnects; false, otherwise
 */
 bool RN487X_Disconnect(void);
-
- /**
-  @Summary
-    Instructs the RN487X_ReadDefaultResponse() function to expect "CMD>".
-
-  @Description
-    This routine instructs the RN487X_ReadDefaultResponse() function to expect
-  * "CMD>" after the actual response.
-
-  @Preconditions
-    RN487X should be in command mode.
-
-  @Param
-    None
-
-  @Returns
-  None
-*/
-void RN487X_CmdPromptEnabled(void);
-
-/**
-  @Summary
-    Instructs the RN487X_ReadDefaultResponse() function not to expect "CMD>".
-
-  @Description
-    This routine instructs the RN487X_ReadDefaultResponse() function not to
-  * expect "CMD>" after the actual response.
-
-  @Preconditions
-    RN487X should be in command mode.
-
-  @Param
-    None
-
-  @Returns
-  None
-*/
-void RN487X_CmdPromptDisabled(void);
 
  /**
   @Summary

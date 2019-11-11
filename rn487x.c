@@ -11,10 +11,11 @@
  */
 // Command TX buffer
 uint8_t cmdBuf[64];
-// Tells command prompt is enabled or not
-bool isCmdPromptEnabled = true;
 
-// Assign BLE_UART functions
+// Tells command prompt is enabled or not
+//bool isCmdPromptEnabled = true;
+
+// Assign BLE_UART functions -- will be templated by MCC
 #define rn487xUartTx        uart[BLE_UART].Write
 #define rn487xUartRx        uart[BLE_UART].Read
 #define rn487xIsTxDone      uart[BLE_UART].TransmitDone
@@ -22,6 +23,9 @@ bool isCmdPromptEnabled = true;
 #define rn487xDelayMs       __delay_ms
 #define rn487xRstSet(x)     do{BT_RST_LAT = (x);}while(0)
 #define rn487xRxIndSet(x)   do{BT_IND_LAT = (x);}while(0)
+
+// mode pins is shared between SW0 (input) and RN mode (only during module reset)
+// by configuring it for open drain, we avoid potential conflicts
 #define rn487xModeSet(x)    do{SW0_SetOpenDrain(); SW0_LAT = (x);}while(0)
 
 #define ESCAPE_ASYNC_START  '%'
@@ -231,13 +235,13 @@ bool RN487X_ReadDefaultResponse(void)
     RN487x_Read();
 
     //Read CMD>
-    if (isCmdPromptEnabled)
+//    if (isCmdPromptEnabled)
     {
-        RN487x_Read();
-        RN487x_Read();
-        RN487x_Read();
-        RN487x_Read();
-        RN487x_Read();
+        RN487x_Read(); // C
+        RN487x_Read(); // M
+        RN487x_Read(); // D
+        RN487x_Read(); // >
+        RN487x_Read(); // _
     }
 
     return status;
@@ -316,28 +320,6 @@ bool RN487X_SetIO(bool b)
     return RN487X_ReadDefaultResponse();
 }
 
-bool RN487X_SetName(const char *name, uint8_t nameLen)
-{
-    uint8_t index;
-
-    cmdBuf[0] = 'S';
-    cmdBuf[1] = 'N';
-    cmdBuf[2] = ',';
-
-    for (index = 0; index < nameLen; index++)
-    {
-        cmdBuf[3 + index] = name[index];
-    }
-    index = index + 3;
-
-    cmdBuf[index++] = '\r';
-    cmdBuf[index++] = '\n';
-
-    RN487X_SendCmd(cmdBuf, nameLen + 5);
-
-    return RN487X_ReadDefaultResponse();
-}
-
 bool RN487X_SetServiceBitmap(uint8_t serviceBitmap)
 {
     uint8_t temp = (serviceBitmap >> 4);
@@ -352,20 +334,6 @@ bool RN487X_SetServiceBitmap(uint8_t serviceBitmap)
     cmdBuf[6] = '\n';
 
     RN487X_SendCmd(cmdBuf, 7);
-
-    return RN487X_ReadDefaultResponse();
-}
-
-bool RN487x_SetBaudRate(uint8_t baudRate)
-{
-    cmdBuf[0] = 'S';
-    cmdBuf[1] = 'B';
-    cmdBuf[2] = ',';
-    cmdBuf[3] = NIBBLE2ASCII(baudRate);
-    cmdBuf[4] = '\r';
-    cmdBuf[5] = '\n';
-
-    RN487X_SendCmd(cmdBuf, 6);
 
     return RN487X_ReadDefaultResponse();
 }
@@ -446,21 +414,6 @@ bool RN487X_RebootCmd(void)
     return RN487X_ReadMsg(reboot, sizeof (reboot));
 }
 
-bool RN487X_FactoryReset(RN487X_FACTORY_RESET_MODE_t resetMode)
-{
-    const uint8_t reboot[] = {'R', 'e', 'b', 'o', 'o', 't', ' ', 'a', 'f', 't', 'e', 'r', ' ', 'F', 'a', 'c', 't', 'o', 'r', 'y', ' ', 'R', 'e', 's', 'e', 't', '\r', '\n'};
-    cmdBuf[0] = 'S';
-    cmdBuf[1] = 'F';
-    cmdBuf[2] = ',';
-    cmdBuf[4] = resetMode;
-    cmdBuf[5] = '\r';
-    cmdBuf[5] = '\n';
-
-    RN487X_SendCmd(cmdBuf, 6);
-
-    return RN487X_ReadMsg(reboot, sizeof (reboot));
-}
-
 bool RN487X_Disconnect(void)
 {
     cmdBuf[0] = 'K';
@@ -472,16 +425,6 @@ bool RN487X_Disconnect(void)
     RN487X_SendCmd(cmdBuf, 5);
 
     return RN487X_ReadDefaultResponse();
-}
-
-void RN487X_CmdPromptEnabled(void)
-{
-    isCmdPromptEnabled = true;
-}
-
-void RN487X_CmdPromptDisabled(void)
-{
-    isCmdPromptEnabled = false;
 }
 
 bool RN487X_GetMsg(uint8_t *data)
