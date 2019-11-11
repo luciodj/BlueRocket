@@ -24,11 +24,6 @@
 #define MCP9808_RESOLUTION  8
 #define MCP9808_RESERVED    9
 
-
-uint8_t atecc508_read_serial(uint16_t addr, uint8_t * serial);
-uint8_t atecc508_read_slot(uint16_t addr, uint16_t slot, uint8_t * serial);
-void atecc508_sleep(uint16_t addr);
-void i2c_prober(void);
 void delay_ms(uint16_t ms);
 void i2c_read_reg(uint16_t addr, uint8_t reg, uint8_t * buf, uint8_t len);
 

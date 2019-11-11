@@ -72,11 +72,11 @@ void __interrupt() INTERRUPT_InterruptManager (void)
         } 
         else if(PIE3bits.BCL2IE == 1 && PIR3bits.BCL2IF == 1)
         {
-            i2c2_driver_busCollisionISR();
+            I2C2_BusCollisionISR();
         } 
         else if(PIE3bits.SSP2IE == 1 && PIR3bits.SSP2IF == 1)
         {
-            i2c2_driver_i2cISR();
+            I2C2_ISR();
         } 
         else
         {
