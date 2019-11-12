@@ -48,11 +48,12 @@
 #include "cmd.h"
 #include "rn487x.h"
 
+#define VERSION     0x06
 
-static uint8_t buffer[80];  // buffer for async messages
-static char serial[80];     // buffer for LightBlue
-static uint8_t sp = 0;      // insertion pointer
-static bool connected = false; // LightBlue is conected
+static uint8_t  buffer[80];         // buffer for async messages
+static char     serial[80];         // buffer for LightBlue
+static uint8_t  sp = 0;             // insertion pointer
+static bool     connected = false;  // LightBlue is connected
 
 void message_handler(uint8_t* msg)
 {
@@ -81,30 +82,28 @@ void main(void)
 
     print_printf("LightBlue demo\n");
 
-    static bool prev_led = false;
     while (1)  {
         if (connected) {
             // on a 1 sec schedule
             if (TMR0IF) {
                 TMR0IF = 0; // clear flag
-                led1_update();
+                led1_update();  // deferred LED control
 
-                blue_version(0x01);
                 // send sensor data via transparent uart
+                blue_version(VERSION);
                 blue_temp();
                 blue_acc();
-                // send button status
                 blue_leds();
                 blue_button();
             }
             // parse BLE output
             while (RN487x_DataReady())
                 blue_parse(RN487x_Read());
-            // buffer terminal input for Lightblue serial command
+            // buffer terminal input for LightBlue serial command
             while (uart[CDC_UART].DataReady()) {
                     serial[sp] = uart[CDC_UART].Read();
                     if ((serial[sp] == '\n') || (sp == (sizeof(serial)-1))) {
-                        serial[sp] = '0';
+                        serial[sp] = '\0';
                         blue_serial(serial);
                         sp = 0;
                     }
