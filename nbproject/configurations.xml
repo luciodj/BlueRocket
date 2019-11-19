@@ -24,6 +24,7 @@
       <itemPath>rn487x.h</itemPath>
       <itemPath>util.h</itemPath>
       <itemPath>sensor_handling.h</itemPath>
+      <itemPath>lightblue.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -49,11 +50,11 @@
         <itemPath>mcc_generated_files/i2c2.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>cmd.c</itemPath>
       <itemPath>sst25pf040ct.c</itemPath>
       <itemPath>rn487x.c</itemPath>
       <itemPath>util.c</itemPath>
       <itemPath>sensor_handling.c</itemPath>
+      <itemPath>lightblue.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -75,11 +76,11 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>nEdbgTool</platformTool>
         <languageToolchain>XC8</languageToolchain>
-        <languageToolchainVersion>2.05</languageToolchainVersion>
+        <languageToolchainVersion>2.10</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.1.82"/>
+        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.2.99"/>
       </packs>
       <compileType>
         <linkerTool>

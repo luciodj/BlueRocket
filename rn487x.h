@@ -1,8 +1,6 @@
 /*
  * File:   rn487x.h
- * Author: C40924
  *
- * Created on September 3, 2019, 11:30 AM
  */
 
 #ifndef RN487X_H

@@ -41,14 +41,11 @@
     SOFTWARE.
 */
 
-#include <string.h>
-#include "mcc_generated_files/mcc.h"
-#include "mcc_generated_files/drivers/uart.h"
 #include "util.h"
-#include "cmd.h"
+#include "lightblue.h"
 #include "rn487x.h"
 
-#define VERSION     0x06
+#define VERSION     0x07
 
 static uint8_t  buffer[80];         // buffer for async messages
 static char     serial[80];         // buffer for LightBlue
@@ -58,7 +55,7 @@ static bool     connected = false;  // LightBlue is connected
 void message_handler(uint8_t* msg)
 {
     //    Async Message:
-//    printf("<<< %s >>>\n", msg);
+    printf("<<< %s >>>\n", msg);
     if (msg[0] == 'D'){
         connected = false;
         puts("]");

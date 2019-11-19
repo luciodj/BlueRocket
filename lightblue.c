@@ -2,7 +2,7 @@
  * cmd.c
  *
  */
-#include "cmd.h"
+#include "lightblue.h"
 #include "sensor_handling.h"
 #include "rn487x.h"
 
