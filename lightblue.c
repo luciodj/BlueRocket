@@ -5,6 +5,7 @@
 #include "lightblue.h"
 #include "sensor_handling.h"
 #include "rn487x.h"
+#include "bsp.h"
 
 uint8_t buffer[80];
 uint32_t temp_word = 0;
@@ -129,7 +130,7 @@ void blue_button(void)
 {
     char payload[16];
     *payload = '\0';
-    blue_byte(payload, 0x00 + (1 - SW0_PORT)); // Button 0, state ( 1 = pushed )
+    blue_byte(payload, SW0_get()? 0 : 1); // Button 0, state ( 1 = pushed )
     blue_print('P', payload);
 }
 
@@ -137,7 +138,7 @@ void blue_button(void)
 uint8_t led1 = 0;       // off by default
 uint8_t led1_new = 0;   // off by default
 
-void led1_set(uint8_t v)
+void LED1_set(uint8_t v)
 {
     led1_new = v;
 }
@@ -147,7 +148,7 @@ void led1_set(uint8_t v)
  * RED is controlled by the BLE module in CMD mode
  * switching mode while in the middle of a receive sequence would clear the BLE buffers
  */
-void led1_update(void)
+void LED1_update(void)
 {
     if (led1 != led1_new) {  // value change
         led1 = led1_new;
@@ -157,29 +158,19 @@ void led1_update(void)
     }
 }
 
-uint8_t led1_get(void)
+uint8_t LED1_get(void)
 {
     return led1;
-}
-
-void led0_set(uint8_t v)
-{
-    LED_0_LAT = 1 - v;
-}
-
-uint8_t led0_get(void)
-{
-    return 1 - LED_0_PORT;
 }
 
 void blue_leds(void)
 {
     char payload[16];
     *payload = '\0';
-    blue_byte(payload, 0x00 + led0_get());
+    blue_byte(payload, 0x00 + LED0_get());
     blue_print('L', payload);
     *payload = '\0';
-    blue_byte(payload, 0x10 + led1_get());  // LED1 state (1 = on)
+    blue_byte(payload, 0x10 + LED1_get());  // LED1 state (1 = on)
     blue_print('L', payload);
 }
 
@@ -213,9 +204,9 @@ void dispatch(char cmd, uint16_t data)
         case 'L':   // LED command
             led = (data >> 4) & 1;
             if (led == 0)    // LED 0
-                led0_set(data & 1);
+                LED0_set(data & 1);
             else             // LED 1
-                led1_set(data & 1);
+                LED1_set(data & 1);
             break;
         case 'S':   // serial data
             // send data to serial port

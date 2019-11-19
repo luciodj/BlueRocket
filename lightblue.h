@@ -8,7 +8,6 @@
 
 #include "mcc_generated_files/mcc.h"
 #include "mcc_generated_files/drivers/uart.h"
-#include "util.h"
 
 bool get_command(char, char*);
 void blue_acc(void);
@@ -18,6 +17,6 @@ void blue_button(void);
 void blue_version(uint8_t);
 void blue_parse(char);
 void blue_serial(char*);
-void led1_update(void);
+void LED1_update(void);
 
 #endif // LIGHTBLUE_H

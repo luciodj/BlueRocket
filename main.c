@@ -1,5 +1,5 @@
 /**
-  Generated Main Source File
+  PIC-BLE LightBlue demo
 
   Company:
     Microchip Technology Inc.
@@ -8,14 +8,11 @@
     main.c
 
   Summary:
-    This is the main file generated using PIC10 / PIC12 / PIC16 / PIC18 MCUs
+    This is the default (Out of Box) demo firmware for PIC-BLE board.
 
   Description:
-    This header file provides implementations for driver APIs for all modules selected in the GUI.
-    Generation Information :
-        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.77
-        Device            :  PIC16LF18456
-        Driver Version    :  2.00
+    It implements a simple serial protocol using the Transparent UART of the
+    RN4870 module to report sensor data to the LightBlue mobile App.
 */
 
 /*
@@ -41,7 +38,6 @@
     SOFTWARE.
 */
 
-#include "util.h"
 #include "lightblue.h"
 #include "rn487x.h"
 
@@ -55,7 +51,7 @@ static bool     connected = false;  // LightBlue is connected
 void message_handler(uint8_t* msg)
 {
     //    Async Message:
-    printf("<<< %s >>>\n", msg);
+//    printf("<<< %s >>>\n", msg);
     if (msg[0] == 'D'){
         connected = false;
         puts("]");
@@ -72,21 +68,18 @@ void main(void)
     RN487x_AsyncHandlerSet(message_handler, buffer, sizeof(buffer));
     INTERRUPT_PeripheralInterruptEnable();
     INTERRUPT_GlobalInterruptEnable();
+
     RN487X_Init();
-
-    // Assign CDC UART
-    print_stdout(EUSART1_Write);
-
-    print_printf("LightBlue demo\n");
+    printf("PIC-BLE LightBlue demo\n");
 
     while (1)  {
         if (connected) {
             // on a 1 sec schedule
             if (TMR0IF) {
                 TMR0IF = 0; // clear flag
-                led1_update();  // deferred LED control
+                LED1_update();  // deferred LED control
 
-                // send sensor data via transparent uart
+                // send sensor data via transparent UART
                 blue_version(VERSION);
                 blue_temp();
                 blue_acc();
@@ -110,12 +103,12 @@ void main(void)
             }
 
         else { // not connected
-            // report BLE output to terminal
+            // bridge BLE output to terminal
             while (RN487x_DataReady())
                 uart[CDC_UART].Write(RN487x_Read());
-            //  mirror cdc to ble
+            //  mirror CDC to BLE
             while (uart[CDC_UART].DataReady())
                 uart[BLE_UART].Write(uart[CDC_UART].Read());
         } // disconnected
-    } // main lopp
+    } // main loop
 }
