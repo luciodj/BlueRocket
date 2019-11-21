@@ -33,13 +33,13 @@ uint8_t cmdBuf[64];
 
 //    rn487xModeSet = interfaceCb->modeSet;
 
-static uint8_t *buffer;
+static char    *buffer;
 static uint8_t bsize;
-static uint8_t *phead;
+static char    *phead;
 static asyncHandlerCb_t *asyncHandlerCb;
 
 
-bool RN487x_AsyncHandlerSet(asyncHandlerCb_t *cb, uint8_t* b, uint8_t len)
+bool RN487x_AsyncHandlerSet(asyncHandlerCb_t *cb, char* b, uint8_t len)
 {
     if ((cb != NULL) && (b != NULL) && (len > 1)) {
         asyncHandlerCb = cb;

@@ -43,20 +43,20 @@
 
 #define VERSION     0x07
 
-static uint8_t  buffer[80];         // buffer for async messages
+static char     buffer[80];         // buffer for async messages
 static char     serial[80];         // buffer for LightBlue
 static uint8_t  sp = 0;             // insertion pointer
 static bool     connected = false;  // LightBlue is connected
 
-void message_handler(uint8_t* msg)
+void message_handler(char* msg)
 {
-    //    Async Message:
-//    printf("<<< %s >>>\n", msg);
-    if (msg[0] == 'D'){
+    //    Status Messages Handler
+    printf("<<< %s >>>\n", msg);
+    if (strstr(msg, "DISCONNECT")){
         connected = false;
         puts("]");
     }
-    else if (msg[0] == 'S') {
+    else if (strstr(msg, "STREAM_OPEN")) {
         connected = true;
         puts("[");
     }
@@ -70,7 +70,7 @@ void main(void)
     INTERRUPT_GlobalInterruptEnable();
 
     RN487X_Init();
-    printf("PIC-BLE LightBlue demo\n");
+    printf("PIC-BLE LightBlue v%x.%x demo\n", VERSION & 0xf0, VERSION & 0x0f);
 
     while (1)  {
         if (connected) {

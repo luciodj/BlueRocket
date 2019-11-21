@@ -314,8 +314,8 @@ bool RN487X_GetMsg(uint8_t *data);
 uint8_t RN487x_Read(void);
 bool RN487x_DataReady(void);
 
-typedef void (asyncHandlerCb_t)(uint8_t*);
-bool RN487x_AsyncHandlerSet(asyncHandlerCb_t cb, uint8_t* b, uint8_t s);
+typedef void (asyncHandlerCb_t)(char*);
+bool RN487x_AsyncHandlerSet(asyncHandlerCb_t cb, char* b, uint8_t s);
 
 #ifdef	__cplusplus
 }
