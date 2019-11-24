@@ -18,5 +18,6 @@ void blue_version(uint8_t);
 void blue_parse(char);
 void blue_serial(char*);
 void LED1_update(void);
+void blue_setPC(uint8_t *buf, uint8_t len);
 
 #endif // LIGHTBLUE_H

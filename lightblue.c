@@ -14,42 +14,6 @@ static uint8_t blue_sequence = 0;
 
 typedef enum { _idle=0, _seq, _cmd, _len0, _len1, _payload0, _payload1} blue_state;
 
-void bt_read_reg(char * cmd, uint8_t * response)
-{
-    // Get into command mode
-    __delay_ms(5);
-    EUSART2_Write('$');
-    EUSART2_Write('$');
-    EUSART2_Write('$');
-    __delay_ms(5);
-
-    // CR to clear input if already in CMD mode
-    EUSART2_Write('\r');
-    __delay_ms(5);
-
-    // Read out garbage data
-    while(EUSART2_is_rx_ready()){
-        EUSART2_Read();
-    }
-
-    // Command to send
-    while(*cmd != 0){
-        EUSART2_Write(*cmd);
-        cmd++;
-    }
-
-    uint8_t i = 0;
-    uint8_t done = false;
-    while (!done){
-        response[i] = EUSART2_Read();
-        if ((response[i] == '\r') || (response[i] == '\n')) {
-            response[i] = 0;
-            done = true;
-        }
-        i++;
-    }
-}
-
 static char _hex[] = "0123456789ABCDEF";
 #define Hex(x) _hex[(x) & 0xf]
 
@@ -81,6 +45,27 @@ void blue_print(char id, char* payload)
     uart[BLE_UART].Write(']');                      // close packet
 }
 
+void blue_setPC(uint8_t *buffer, uint8_t len)
+{
+        RN487X_EnterCmdMode();
+        uart[BLE_UART].Write('S');
+        uart[BLE_UART].Write('H');
+        uart[BLE_UART].Write('W');
+        uart[BLE_UART].Write(',');
+        uart[BLE_UART].Write('0');
+        uart[BLE_UART].Write('0');
+        uart[BLE_UART].Write('7');
+        uart[BLE_UART].Write('2');
+        uart[BLE_UART].Write(',');
+        while(len-- > 0){
+            uart[BLE_UART].Write(Hex(*buffer>>4));
+            uart[BLE_UART].Write(Hex(*buffer++));
+        }
+        uart[BLE_UART].Write('\n');
+        RN487X_ReadDefaultResponse();
+        RN487X_EnterDataMode();
+}
+
 /* \brief collects temperature sensor data
 */
 void blue_temp(void){
@@ -103,7 +88,7 @@ void blue_temp(void){
 void blue_acc(void){
     char payload[32];
     uint8_t buffer[6];
-    
+
     *payload = '\0';
     uint8_t i;
     uint16_t xyz[3], temp_word;
