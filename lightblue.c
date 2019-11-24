@@ -7,9 +7,6 @@
 #include "rn487x.h"
 #include "bsp.h"
 
-uint8_t buffer[80];
-uint32_t temp_word = 0;
-uint8_t key_buffer[128];
 static uint8_t blue_sequence = 0;
 
 
@@ -88,6 +85,7 @@ void blue_print(char id, char* payload)
 */
 void blue_temp(void){
     char payload[32];
+    uint8_t buffer[2];
 
     *payload = '\0';
     uint16_t word = temp_read(buffer);
@@ -104,7 +102,8 @@ void blue_temp(void){
 */
 void blue_acc(void){
     char payload[32];
-
+    uint8_t buffer[6];
+    
     *payload = '\0';
     uint8_t i;
     uint16_t xyz[3], temp_word;

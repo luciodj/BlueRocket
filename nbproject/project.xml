@@ -3,7 +3,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>Blue-Rocket</name>
+            <name>PIC-LightBlue</name>
             <creation-uuid>3ba7e597-a238-4206-a760-7dda9f62fcf4</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
