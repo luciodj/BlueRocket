@@ -80,10 +80,19 @@ void main(void)
 
     printf("PIC-BLE Configurator\n");
     RN487X_EnterCmdMode();
-    RN487X_SetBaud('9');
-    RN487X_SetName("PIC-BLE");
-    RN487X_RebootCmd();
-    puts("Rebooting...");
+    puts("Setting Baud Rate to 9,600");
+    bool success = false;
+    if (RN487X_SetBaud('9')) {
+        puts("SettingBoard Name set to PIC-BLE");
+        if (RN487X_SetName("PIC-BLE")) {
+            puts("Rebooting...");
+            if (RN487X_RebootCmd()){
+                puts("You can download fw v.8 and above now!");
+            }
+        }
+    } else {
+        puts("Configurator failed, was the module already configured?");
+    }
     // reconfigure BLE UART for 9600
     SP2BRGH = 3; SP2BRGL = 0x40;
 

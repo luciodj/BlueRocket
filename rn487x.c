@@ -205,8 +205,11 @@ bool RN487X_ReadDefaultResponse(void)
     bool status = false;
 
     resp[0] = RN487x_Read();
+    putchar(resp[0]);
     resp[1] = RN487x_Read();
+    putchar(resp[1]);
     resp[2] = RN487x_Read();
+    putchar(resp[2]);
 
     switch (resp[0])
     {
@@ -231,17 +234,21 @@ bool RN487X_ReadDefaultResponse(void)
     }
 
     /* Read carriage return and line feed comes with response */
-    RN487x_Read();
-    RN487x_Read();
+    putchar(RN487x_Read());
+    putchar(RN487x_Read());
 
     //Read CMD>
 //    if (isCmdPromptEnabled)
     {
-        RN487x_Read(); // C
-        RN487x_Read(); // M
-        RN487x_Read(); // D
-        RN487x_Read(); // >
-        RN487x_Read(); // _
+        putchar(RN487x_Read()); // C
+        putchar(RN487x_Read()); // C
+        putchar(RN487x_Read()); // C
+        putchar(RN487x_Read()); // C
+        putchar(RN487x_Read()); // C
+//        RN487x_Read(); // M
+//        RN487x_Read(); // D
+//        RN487x_Read(); // >
+//        RN487x_Read(); // _
     }
 
     return status;
@@ -322,8 +329,8 @@ bool RN487X_SetIO(bool b)
 
 bool RN487X_SetBaud(char c)
 { // SB,0x command , 9 = 9600, 3 = 115,200
-    cmdBuf[0] = 'S';    // I/O
-    cmdBuf[1] = 'B';    // Output
+    cmdBuf[0] = 'S';
+    cmdBuf[1] = 'B';
     cmdBuf[2] = ',';
     cmdBuf[3] = '0';
     cmdBuf[4] =  c;
@@ -336,9 +343,9 @@ bool RN487X_SetBaud(char c)
 
 bool RN487X_SetName(char *name)
 { // S-,name
-    cmdBuf[0] = 'S';    // I/O
-    cmdBuf[1] = '-';    // Output
-    cmdBuf[2] = ',';
+    rn487xUartTx('S');    // set name+ serial
+    rn487xUartTx('-');
+    rn487xUartTx(',');
     while(*name) rn487xUartTx(*name++);
     rn487xUartTx('\r');
     rn487xUartTx('\n');
