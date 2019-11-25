@@ -74,48 +74,24 @@ void main(void)
     RN487x_AsyncHandlerSet(message_handler, buffer, sizeof(buffer));
     INTERRUPT_PeripheralInterruptEnable();
     INTERRUPT_GlobalInterruptEnable();
-
+    // temporarily configure BLE UART for 115,200
+    SP2BRGH = 0; SP2BRGL = 0x44;
     RN487X_Init();
-    printf("PIC-BLE LightBlue v%d.%d demo\n", version[1], version[2]);
-    blue_setPC(&version[0], sizeof(version));
+
+    printf("PIC-BLE Configurator\n");
+    RN487X_EnterCmdMode();
+    RN487X_SetBaud('9');
+    RN487X_SetName("PIC-BLE");
+    RN487X_RebootCmd();
+    puts("Rebooting...");
+    // reconfigure BLE UART for 9600
+    SP2BRGH = 3; SP2BRGL = 0x40;
 
     while (1)  {
-        if (connected) {
-            // on a 1 sec schedule
-            if (TMR0IF) {
-                TMR0IF = 0; // clear flag
-                LED1_update();  // deferred LED control
-
-                // send sensor data via transparent UART
-                blue_version(VERSION);
-                blue_temp();
-                blue_acc();
-                blue_leds();
-                blue_button();
-            }
-            // parse BLE output
-            while (RN487x_DataReady())
-                blue_parse(RN487x_Read());
-            // buffer terminal input for LightBlue serial command
-            while (uart[CDC_UART].DataReady()) {
-                    serial[sp] = uart[CDC_UART].Read();
-                    if ((serial[sp] == '\n') || (sp == (sizeof(serial)-1))) {
-                        serial[sp] = '\0';
-                        blue_serial(serial);
-                        sp = 0;
-                    }
-                    else
-                        sp++;
-                }
-            }
-
-        else { // not connected
-            // bridge BLE output to terminal
-            while (RN487x_DataReady())
-                uart[CDC_UART].Write(RN487x_Read());
-            //  mirror CDC to BLE
-            while (uart[CDC_UART].DataReady())
-                uart[BLE_UART].Write(uart[CDC_UART].Read());
-        } // disconnected
+        while (RN487x_DataReady())
+            uart[CDC_UART].Write(RN487x_Read());
+        //  mirror CDC to BLE
+        while (uart[CDC_UART].DataReady())
+            uart[BLE_UART].Write(uart[CDC_UART].Read());
     } // main loop
 }

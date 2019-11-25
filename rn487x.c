@@ -320,6 +320,32 @@ bool RN487X_SetIO(bool b)
     return RN487X_ReadDefaultResponse();
 }
 
+bool RN487X_SetBaud(char c)
+{ // SB,0x command , 9 = 9600, 3 = 115,200
+    cmdBuf[0] = 'S';    // I/O
+    cmdBuf[1] = 'B';    // Output
+    cmdBuf[2] = ',';
+    cmdBuf[3] = '0';
+    cmdBuf[4] =  c;
+    cmdBuf[5] = '\r';
+    cmdBuf[6] = '\n';
+
+    RN487X_SendCmd(cmdBuf, 7);
+    return RN487X_ReadDefaultResponse();
+}
+
+bool RN487X_SetName(char *name)
+{ // S-,name
+    cmdBuf[0] = 'S';    // I/O
+    cmdBuf[1] = '-';    // Output
+    cmdBuf[2] = ',';
+    while(*name) rn487xUartTx(*name++);
+    rn487xUartTx('\r');
+    rn487xUartTx('\n');
+
+    return RN487X_ReadDefaultResponse();
+}
+
 bool RN487X_RebootCmd(void)
 {
     const uint8_t reboot[] = {'R', 'e', 'b', 'o', 'o', 't', 'i', 'n', 'g', '\r', '\n'};

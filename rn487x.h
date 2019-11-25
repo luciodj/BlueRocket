@@ -317,6 +317,9 @@ bool RN487x_DataReady(void);
 typedef void (asyncHandlerCb_t)(char*);
 bool RN487x_AsyncHandlerSet(asyncHandlerCb_t cb, char* b, uint8_t s);
 
+bool RN487X_SetBaud(char c);
+bool RN487X_SetName(char *);
+
 #ifdef	__cplusplus
 }
 #endif
