@@ -41,13 +41,7 @@
 #include "lightblue.h"
 #include "rn487x.h"
 
-#define VERSION     8
-
-uint8_t version[] = {
-    02,     // 1 = AVR, 2 = PIC
-    00,     // major
-    VERSION // minor
-};
+#define VERSION     0x09
 
 static char     buffer[80];         // buffer for status messages
 static char     serial[80];         // buffer for LightBlue
@@ -76,8 +70,7 @@ void main(void)
     INTERRUPT_GlobalInterruptEnable();
 
     RN487X_Init();
-    printf("PIC-BLE LightBlue v%d.%d demo\n", version[1], version[2]);
-    blue_setPC(&version[0], sizeof(version));
+    printf("AVR-BLE LightBlue v%x.%x demo\n", VERSION & 0xf0, VERSION & 0x0f);
 
     while (1)  {
         if (connected) {
@@ -110,7 +103,7 @@ void main(void)
             }
 
         else { // not connected
-            // bridge BLE output to terminal
+            // bridge BLE output to terminal !!!
             while (RN487x_DataReady())
                 uart[CDC_UART].Write(RN487x_Read());
             //  mirror CDC to BLE

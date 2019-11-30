@@ -45,27 +45,6 @@ void blue_print(char id, char* payload)
     uart[BLE_UART].Write(']');                      // close packet
 }
 
-void blue_setPC(uint8_t *buffer, uint8_t len)
-{
-        RN487X_EnterCmdMode();
-        uart[BLE_UART].Write('S');
-        uart[BLE_UART].Write('H');
-        uart[BLE_UART].Write('W');
-        uart[BLE_UART].Write(',');
-        uart[BLE_UART].Write('0');
-        uart[BLE_UART].Write('0');
-        uart[BLE_UART].Write('7');
-        uart[BLE_UART].Write('2');
-        uart[BLE_UART].Write(',');
-        while(len-- > 0){
-            uart[BLE_UART].Write(Hex(*buffer>>4));
-            uart[BLE_UART].Write(Hex(*buffer++));
-        }
-        uart[BLE_UART].Write('\n');
-        RN487X_ReadDefaultResponse();
-        RN487X_EnterDataMode();
-}
-
 /* \brief collects temperature sensor data
 */
 void blue_temp(void){
@@ -79,7 +58,6 @@ void blue_temp(void){
     // also expose on terminal
     uint16_t degree = ((buffer[0] << 4) & 0xF0) | ((buffer[1] >> 4) & 0x0F);
     uint16_t temp_word = (uint16_t) (buffer[1] & 0x0F) * 625;
-//    print_printf("%d.%4dC\r\n", (uint32_t)degree, (uint32_t)temp_word);
     blue_print('T', payload);
 }
 
@@ -101,12 +79,8 @@ void blue_acc(void){
         // also expose on terminal
         if(temp_word & 0x800){
             temp_word = ~temp_word + 1;
-//            print_printf("-%d, ", (uint32_t)temp_word & 0xFFF);
-        }else{
-//            print_printf("%d, ", (uint32_t)temp_word & 0xFFF);
         }
     }
-//    print_printf("\n");
     blue_print('X', payload);
 }
 
@@ -219,7 +193,6 @@ void blue_parse(char c)
     static uint16_t data = 0;
     static char cmd = '\0';
 
-//    printf("Char: %c, state: %d\n", c, state);
     switch(state) {
         case _seq:
             //ignore sequence
